@@ -1,0 +1,50 @@
+@page "/rezepte/{Slug}"
+@using RezepteWeb.Models
+@using RezepteWeb.Services
+@inject RecipeService RecipeService
+
+@if (recipe is null)
+{
+    <PageTitle>Rezept nicht gefunden</PageTitle>
+    <h1>Rezept nicht gefunden</h1>
+    <p class="text-muted">Das gesuchte Rezept existiert nicht.</p>
+    <a href="/" class="btn btn-primary">Zur Übersicht</a>
+}
+else
+{
+    <PageTitle>@recipe.Title – Rezepte</PageTitle>
+
+    <nav aria-label="breadcrumb">
+        <a href="/" class="breadcrumb-link text-muted">&larr; Zur Übersicht</a>
+    </nav>
+
+    <h1>@recipe.Title</h1>
+
+    @if (recipe.Facts.Count > 0)
+    {
+        <ul class="list-inline recipe-facts">
+            @foreach (var fact in recipe.Facts)
+            {
+                <li class="list-inline-item">
+                    <span class="badge text-bg-light border"><strong>@fact.Key:</strong> @fact.Value</span>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="recipe-content">
+        @((MarkupString)recipe.Html)
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Slug { get; set; }
+
+    private RezepteWeb.Models.Recipe? recipe;
+
+    protected override void OnParametersSet()
+    {
+        recipe = RecipeService.GetBySlug(Slug ?? string.Empty);
+    }
+}

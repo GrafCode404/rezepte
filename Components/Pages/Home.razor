@@ -1,0 +1,60 @@
+﻿@page "/"
+@using RezepteWeb.Models
+@using RezepteWeb.Services
+@inject RecipeService RecipeService
+
+<PageTitle>Rezepte</PageTitle>
+
+<h1>Rezepte</h1>
+
+<form method="get" action="/" class="mt-4 mb-4">
+    <div class="input-group search-box">
+        <input type="search" class="form-control" name="q" placeholder="Rezept durchsuchen (z. B. &quot;Sauerteig&quot;)" value="@Search" autofocus />
+        <button type="submit" class="btn btn-primary">Suchen</button>
+    </div>
+</form>
+
+@if (string.IsNullOrWhiteSpace(Search))
+{
+    <p class="text-muted">@RecipeService.GetAll().Count Rezepte</p>
+}
+else
+{
+    <p class="text-muted">@Results.Count() Treffer für „@Search“</p>
+}
+
+@if (!Results.Any())
+{
+    <div class="alert alert-info">
+        Kein Rezept gefunden. Bitte versuche einen anderen Suchbegriff.
+    </div>
+}
+else
+{
+    <div class="recipe-grid">
+        @foreach (var recipe in Results)
+        {
+            <a class="card recipe-card" href="/rezepte/@recipe.Slug">
+                <div class="card-body">
+                    <h2 class="card-title h5">@recipe.Title</h2>
+                    <ul class="recipe-facts">
+                        @foreach (var key in new[] { "Menge", "Vorteig", "Gärzeit", "Backdauer", "Backtemperatur" })
+                        {
+                            @if (recipe.Facts.TryGetValue(key, out var value))
+                            {
+                                <li><strong>@key:</strong> @value</li>
+                            }
+                        }
+                    </ul>
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? Search { get; set; }
+
+    private IEnumerable<Recipe> Results => RecipeService.Search(Search);
+}
