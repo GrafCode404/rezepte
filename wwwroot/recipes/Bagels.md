@@ -32,13 +32,13 @@
 ## **Anleitungen**
 
 ### **Den Teig zubereiten**
-- 460 ml Milch in der Mikrowelle aufwärmen – Achtung, nicht zu heiß!
-- 820 g Mehl in eine große Schüssel geben und in der Mitte eine Kuhle formen.
+- Die Milch in der Mikrowelle aufwärmen – Achtung, nicht zu heiß!
+- Das Mehl in eine große Schüssel geben und in der Mitte eine Kuhle formen.
 - Die warme Milch in die Mehlkuhle geben.
-- 42 g frische Hefe in die Milch in der Kuhle krümeln.
-- 60 g Zucker und 2 TL Salz mit in die Milch in der Kuhle geben.
-- 50 g Butter in der Mikrowelle bei wenig Watt weich werden lassen – Achtung, darf nicht flüssig werden!
-- 2 Eier trennen. Das Eiweiß in den Kühlschrank stellen, die beiden Eigelb mit in die Mehlkuhle geben.
+- Die frische Hefe in die Milch in der Kuhle krümeln.
+- Den Zucker und das Salz mit in die Milch in der Kuhle geben.
+- Die Butter in der Mikrowelle bei wenig Watt weich werden lassen – Achtung, darf nicht flüssig werden!
+- Die Eier trennen. Das Eiweiß in den Kühlschrank stellen, die beiden Eigelb mit in die Mehlkuhle geben.
 - Die weiche Butter mit in die Kuhle geben.
 - Alle Zutaten in der Schüssel mit den Knethaken zu einem glatten Teig verkneten. Wenn die Knethaken nicht ausreichen, mit den Händen weiterkneten, bis sich eine glatte Kugel formen lässt.
 - Die Teigschüssel etwas bemehlen, die Teigkugel hineinlegen und noch mal mit etwas Mehl bestreuen.

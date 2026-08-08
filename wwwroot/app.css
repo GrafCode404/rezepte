@@ -397,3 +397,12 @@ h1:focus {
     margin: 0;
     text-align: left;
 }
+
+.recipe-share {
+    margin: 2rem 0 0;
+}
+
+.recipe-share .recipe-qr svg {
+    width: 280px;
+    height: 280px;
+}

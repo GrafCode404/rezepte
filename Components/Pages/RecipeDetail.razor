@@ -36,22 +36,6 @@ else
         </ul>
     }
 
-    @if (qrSvg is not null)
-    {
-        <section class="recipe-share" aria-label="Teilen">
-            <h3>Teilen</h3>
-            <div class="share-buttons">
-                <a class="btn btn-share" href="@waLink" target="_blank" rel="noopener">WhatsApp</a>
-                <a class="btn btn-share" href="@mailLink">E-Mail</a>
-                <button type="button" class="btn btn-share" id="share-copy" @onclick="CopyLink">Link kopieren</button>
-            </div>
-            <figure class="recipe-qr">
-                @((MarkupString)qrSvg)
-                <figcaption>Link als QR-Code</figcaption>
-            </figure>
-        </section>
-    }
-
     <div class="recipe-content">
         @((MarkupString)recipe.Html)
     </div>
@@ -61,6 +45,26 @@ else
         <p class="text-muted">Beim Backen etwas aufgefallen?</p>
         <div id="recipe-notes"></div>
     </section>
+
+    @if (qrSvg is not null)
+    {
+        <section class="recipe-share" aria-label="Teilen">
+            <h3>Teilen</h3>
+            <div class="share-buttons">
+                <a class="btn btn-share" href="@waLink" target="_blank" rel="noopener">WhatsApp</a>
+                <a class="btn btn-share" href="@mailLink">E-Mail</a>
+                <button type="button" class="btn btn-share" id="share-copy" @onclick="CopyLink">Link kopieren</button>
+                <button type="button" class="btn btn-share" @onclick="ToggleQr">QR-Code</button>
+            </div>
+            @if (showQr)
+            {
+                <figure class="recipe-qr recipe-qr-large">
+                    @((MarkupString)qrSvg)
+                    <figcaption>Link als QR-Code</figcaption>
+                </figure>
+            }
+        </section>
+    }
 }
 
 @code {
@@ -71,6 +75,9 @@ else
     private string? qrSvg;
     private string waLink = "";
     private string mailLink = "";
+    private bool showQr;
+
+    private void ToggleQr() => showQr = !showQr;
 
     protected override async Task OnParametersSetAsync()
     {
