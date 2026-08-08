@@ -33,7 +33,7 @@ Volltextsuche über Titel und Inhalt aller Rezepte über das Suchfeld auf der St
 
 Die Seite ist eine Progressive Web App (Manifest + Service Worker in `wwwroot/`). Auf Android/iOS lässt sie sich über „Installieren" bzw. „Zum Home-Bildschirm hinzufügen" wie eine App installieren und funktioniert teilweise offline.
 
-Hinweis zum Cache: Rezeptdaten (`index.json`) werden im Hintergrund aktualisiert – neue Rezepte erscheinen nach der Installation spätestens beim zweiten Öffnen. Nach großen Änderungen die Cache-Version (`cacheName`) in `wwwroot/service-worker.js` erhöhen.
+Hinweis zum Cache: Rezeptdaten (`index.json`) werden im Hintergrund aktualisiert – neue Rezepte erscheinen nach der Installation spätestens beim zweiten Öffnen. Wenn eine neue App-Version bereitsteht, erscheint unten ein Banner mit „Aktualisieren" – der Klick aktiviert die neue Version und startet die App neu. Die Cache-Version (`cacheName`) in `wwwroot/service-worker.js` wird bei großen Änderungen erhöht, damit alte Cache-Inhalte verworfen werden.
 
 ## QR-Code
 

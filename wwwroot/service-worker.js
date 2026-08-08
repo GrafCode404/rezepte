@@ -1,9 +1,8 @@
-const cacheName = "rezepte-v1";
+const cacheName = "rezepte-v2";
 
 // App-Start-Seite für den Offline-Fallback vorcachen.
 self.addEventListener("install", (event) => {
     event.waitUntil(caches.open(cacheName).then((cache) => cache.add(self.registration.scope)));
-    self.skipWaiting();
 });
 
 // Veraltete Caches entrümpeln.
@@ -14,6 +13,13 @@ self.addEventListener("activate", (event) => {
         )
     );
     self.clients.claim();
+});
+
+// Vom Update-Banner angefordert: neuen Service Worker aktivieren.
+self.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener("fetch", (event) => {
