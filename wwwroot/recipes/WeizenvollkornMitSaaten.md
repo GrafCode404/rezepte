@@ -1,4 +1,4 @@
-# Weizenvollkronbrot mit Saaten (Kastenbrot)
+# Weizenvollkornbrot mit Saaten (Kastenbrot)
 
 * **Menge:** 1 Kastenbrot (16x9x9cm)                         
 * **Vorteig:** 5 Std.
