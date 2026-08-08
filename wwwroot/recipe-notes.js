@@ -72,7 +72,7 @@
     }
 
     function loadNotes(slug) {
-        return github("/repos/" + REPO + "/issues?labels=" + LABEL + "&state=all&per_page=100")
+        return github("/repos/" + REPO + "/issues?labels=" + LABEL + "&state=open&per_page=100")
             .then(function (r) {
                 if (r.status !== 200 || !r.body) {
                     return [];
