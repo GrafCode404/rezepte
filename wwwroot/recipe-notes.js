@@ -25,6 +25,14 @@
         return node;
     }
 
+    function basePath() {
+        return location.pathname.indexOf("/rezepte") === 0 ? "/rezepte" : "";
+    }
+
+    function loginPath() {
+        return basePath() + "/zugang";
+    }
+
     function github(path, options) {
         var token = localStorage.getItem(TOKEN_KEY);
         var headers = {
@@ -115,7 +123,7 @@
             getCurrentUser().then(function (login) {
                 if (!login) {
                     localStorage.removeItem(TOKEN_KEY);
-                    renderAnonymous(container, slug, title, true);
+                    renderAnonymous(container, slug, title);
                     return;
                 }
                 if (login !== ALLOWED_USER) {
@@ -126,81 +134,32 @@
                 renderPanel(container, slug, title);
             });
         } else {
-            renderAnonymous(container, slug, title, false);
+            renderAnonymous(container, slug, title);
         }
     }
 
-    function renderAnonymous(container, slug, title, invalid) {
+    function renderAnonymous(container, slug, title) {
         container.innerHTML = "";
         var hint = make("p", "notes-hint",
-            "Anmerkungen zu diesem Rezept schreibt nur du. Verbinde dich einmalig mit deinem GitHub-Zugang – " +
-            "das Token wird nur in diesem Browser gespeichert.");
+            "Anmerkungen schreibt nur du. Melde dich über den Zugang an, um Anmerkungen zu hinterlassen.");
+        var btn = make("a", "btn btn-primary", "Zugang");
+        btn.href = loginPath();
         container.appendChild(hint);
+        container.appendChild(btn);
 
-        var form = make("form", "notes-token-form");
-        var status = make("div", "notes-status");
-        if (invalid) {
-            status.textContent = "Das gespeicherte Token ist ungültig oder abgelaufen – neues Token eingeben.";
-            status.className += " notes-error";
-        }
-        var intro = make("p", "notes-hint",
-            "Token anlegen: GitHub → Settings → Developer settings → Personal access tokens → " +
-            "Fine-grained (nur Repo „rezepte“, Permission „Issues: Read and write“).");
-        var input = document.createElement("input");
-        input.type = "password";
-        input.className = "form-control";
-        input.autocomplete = "off";
-        input.placeholder = "GitHub-Token (ghp_… oder github_pat_…)";
-        var submit = make("button", "btn btn-primary", "Verbinden");
-        submit.type = "submit";
-        var row = make("div", "notes-token-row");
-
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-            var token = input.value.trim();
-            if (!token) {
-                return;
-            }
-            input.disabled = true;
-            submit.disabled = true;
-            status.textContent = "Prüfe Token …";
-            localStorage.setItem(TOKEN_KEY, token);
-            getCurrentUser().then(function (login) {
-                if (login === ALLOWED_USER) {
-                    renderPanel(container, slug, title);
-                    return;
-                }
-                localStorage.removeItem(TOKEN_KEY);
-                if (!login) {
-                    renderInvalid(container, slug, title);
-                } else {
-                    renderDenied(container, login);
-                }
-            }).catch(function () {
-                localStorage.removeItem(TOKEN_KEY);
-                renderInvalid(container, slug, title);
-            });
-        });
-
-        row.appendChild(input);
-        row.appendChild(submit);
-        form.appendChild(status);
-        form.appendChild(intro);
-        form.appendChild(row);
-        container.appendChild(form);
-    }
-
-    function renderInvalid(container, slug, title) {
-        container.innerHTML = "";
-        container.appendChild(make("p", "notes-hint notes-error",
-            "Token ungültig – bitte ein Token mit Issues-Schreibrecht für das Repo „rezepte\" verwenden."));
-        container.appendChild(backButton(container, slug, title));
+        container.appendChild(make("h3", "notes-heading", "Bisherige Anmerkungen"));
+        var list = make("div", "notes-list");
+        container.appendChild(list);
+        notesList(list, slug, false);
     }
 
     function renderDenied(container, login) {
         container.innerHTML = "";
         container.appendChild(make("p", "notes-hint notes-error",
             "Dieser GitHub-Account (" + login + ") ist nicht freigegeben – nur der Besitzer kann Anmerkungen schreiben."));
+        var btn = make("a", "btn btn-primary", "Zugang");
+        btn.href = loginPath();
+        container.appendChild(btn);
     }
 
     function renderPanel(container, slug, title) {
@@ -210,7 +169,7 @@
         logout.type = "button";
         logout.addEventListener("click", function () {
             localStorage.removeItem(TOKEN_KEY);
-            renderAnonymous(container, slug, title, false);
+            renderAnonymous(container, slug, title);
         });
         logged.appendChild(make("small", "text-muted", "Verbunden als " + ALLOWED_USER));
         logged.appendChild(logout);
@@ -239,11 +198,11 @@
                 if (r.status === 201 || r.status === 200) {
                     area.value = "";
                     status.textContent = "Gespeichert.";
-                    return notesList(list, slug);
+                    return notesList(list, slug, true);
                 }
                 if (r.status === 401 || r.status === 403) {
                     localStorage.removeItem(TOKEN_KEY);
-                    renderAnonymous(container, slug, title, true);
+                    renderAnonymous(container, slug, title);
                     return;
                 }
                 status.textContent = "Speichern fehlgeschlagen (Status " + r.status + ").";
@@ -261,10 +220,10 @@
         container.appendChild(listHeading);
         container.appendChild(list);
 
-        notesList(list, slug);
+        notesList(list, slug, true);
     }
 
-    function notesList(list, slug) {
+    function notesList(list, slug, canDelete) {
         list.innerHTML = "";
         loadNotes(slug).then(function (notes) {
             if (!notes.length) {
@@ -276,15 +235,17 @@
                 var meta = make("div", "notes-meta");
                 var date = note.created ? new Date(note.created).toLocaleDateString("de-DE") : "";
                 meta.appendChild(make("span", "text-muted", "#" + note.number + " · " + date));
-                var del = make("button", "btn btn-sm btn-link notes-delete", "Löschen");
-                del.type = "button";
-                del.addEventListener("click", function () {
-                    del.disabled = true;
-                    deleteNote(note.number).then(function () {
-                        notesList(list, slug);
+                if (canDelete) {
+                    var del = make("button", "btn btn-sm btn-link notes-delete", "Löschen");
+                    del.type = "button";
+                    del.addEventListener("click", function () {
+                        del.disabled = true;
+                        deleteNote(note.number).then(function () {
+                            notesList(list, slug, true);
+                        });
                     });
-                });
-                meta.appendChild(del);
+                    meta.appendChild(del);
+                }
                 item.appendChild(meta);
                 var body = make("div", "notes-body");
                 var lines = (note.body || "").split(/\r?\n/);
@@ -298,13 +259,118 @@
         });
     }
 
-    function backButton(container, slug, title) {
-        var btn = make("button", "btn btn-outline-secondary", "Zurück");
-        btn.type = "button";
-        btn.addEventListener("click", function () {
-            renderAnonymous(container, slug, title, false);
+    function renderLoginPage(container) {
+        var token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            getCurrentUser().then(function (login) {
+                if (login === ALLOWED_USER) {
+                    renderLoginConnected(container);
+                    return;
+                }
+                localStorage.removeItem(TOKEN_KEY);
+                if (!login) {
+                    renderLoginForm(container, true);
+                } else {
+                    renderLoginDenied(container, login);
+                }
+            });
+        } else {
+            renderLoginForm(container, false);
+        }
+    }
+
+    function renderLoginForm(container, invalid) {
+        container.innerHTML = "";
+
+        var status = make("div", "notes-status");
+        if (invalid) {
+            status.textContent = "Das gespeicherte Token ist ungültig oder abgelaufen – neues Token eingeben.";
+            status.className += " notes-error";
+        }
+        var intro = make("p", "notes-hint",
+            "Token anlegen: GitHub → Settings → Developer settings → Personal access tokens → " +
+            "Fine-grained (nur Repo „rezepte\", Permission „Issues: Read and write\").");
+        var input = document.createElement("input");
+        input.type = "password";
+        input.className = "form-control";
+        input.autocomplete = "off";
+        input.placeholder = "GitHub-Token (ghp_… oder github_pat_…)";
+        var submit = make("button", "btn btn-primary", "Verbinden");
+        submit.type = "submit";
+        var row = make("div", "notes-token-row");
+
+        var form = make("form", "notes-token-form");
+        form.appendChild(status);
+        form.appendChild(intro);
+        row.appendChild(input);
+        row.appendChild(submit);
+        form.appendChild(row);
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var token = input.value.trim();
+            if (!token) {
+                return;
+            }
+            input.disabled = true;
+            submit.disabled = true;
+            status.textContent = "Prüfe Token …";
+            localStorage.setItem(TOKEN_KEY, token);
+            getCurrentUser().then(function (login) {
+                if (login === ALLOWED_USER) {
+                    renderLoginConnected(container);
+                    return;
+                }
+                localStorage.removeItem(TOKEN_KEY);
+                if (!login) {
+                    status.textContent = "Token ungültig – bitte prüfen und erneut versuchen.";
+                    status.className += " notes-error";
+                } else {
+                    renderLoginDenied(container, login);
+                    return;
+                }
+                input.disabled = false;
+                submit.disabled = false;
+            }).catch(function () {
+                localStorage.removeItem(TOKEN_KEY);
+                status.textContent = "Verbindung zu GitHub fehlgeschlagen.";
+                status.className += " notes-error";
+                input.disabled = false;
+                submit.disabled = false;
+            });
         });
-        return btn;
+
+        container.appendChild(make("h2", null, "Anmelden"));
+        container.appendChild(form);
+    }
+
+    function renderLoginConnected(container) {
+        container.innerHTML = "";
+        var ok = make("p", "notes-hint", "Verbunden als " + ALLOWED_USER + " – du kannst jetzt auf den Rezeptseiten Anmerkungen schreiben.");
+        var logout = make("button", "btn btn-outline-secondary", "Abmelden");
+        logout.type = "button";
+        logout.addEventListener("click", function () {
+            localStorage.removeItem(TOKEN_KEY);
+            renderLoginPage(container);
+        });
+        var back = make("a", "btn btn-primary", "Zu den Rezepten");
+        back.href = basePath() + "/";
+        container.appendChild(ok);
+        container.appendChild(logout);
+        container.appendChild(back);
+    }
+
+    function renderLoginDenied(container, login) {
+        container.innerHTML = "";
+        container.appendChild(make("p", "notes-hint notes-error",
+            "Dieser GitHub-Account (" + login + ") ist nicht freigegeben – nur der Besitzer kann Anmerkungen schreiben."));
+        var logout = make("button", "btn btn-outline-secondary", "Abmelden");
+        logout.type = "button";
+        logout.addEventListener("click", function () {
+            localStorage.removeItem(TOKEN_KEY);
+            renderLoginPage(container);
+        });
+        container.appendChild(logout);
     }
 
     window.RecipeNotes = {
@@ -318,6 +384,12 @@
             }
             container.dataset.slug = slug;
             render(container, slug, title);
+        },
+        initLogin: function () {
+            var container = document.getElementById("login-container");
+            if (container) {
+                renderLoginPage(container);
+            }
         }
     };
 })();

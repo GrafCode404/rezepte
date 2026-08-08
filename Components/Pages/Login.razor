@@ -1,0 +1,20 @@
+@page "/zugang"
+@inject IJSRuntime JS
+
+<PageTitle>Zugang – Rezepte</PageTitle>
+
+<h1>Zugang</h1>
+
+<p class="text-muted">
+    Hier verbindest du deinen GitHub-Zugang, um Anmerkungen zu Rezepten zu schreiben.
+    Das Token wird nur in diesem Browser gespeichert.
+</p>
+
+<div id="login-container"></div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("RecipeNotes.initLogin");
+    }
+}
