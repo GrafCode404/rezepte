@@ -1,4 +1,4 @@
-// build 2026-08-08.2
+// build 2026-08-08.3
 const cacheName = "rezepte-v2";
 
 // App-Start-Seite für den Offline-Fallback vorcachen.
