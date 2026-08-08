@@ -1,0 +1,26 @@
+@page "/uebersicht"
+@inject IJSRuntime JS
+
+<PageTitle>Offene Anmerkungen – Rezepte</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <a href="./" class="breadcrumb-link text-muted">&larr; Zur Übersicht</a>
+</nav>
+
+<h1>Offene Anmerkungen</h1>
+
+<p class="text-muted">
+    Alle offenen Anmerkungen zu den Rezepten und Allgemeines – auf einen Blick, was zu erledigen ist.
+</p>
+
+<div id="notes-overview"></div>
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JS.InvokeVoidAsync("RecipeNotes.initOverview");
+        }
+    }
+}

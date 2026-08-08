@@ -13,8 +13,11 @@
 <div id="login-container"></div>
 
 @code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnAfterRender(bool firstRender)
     {
-        await JS.InvokeVoidAsync("RecipeNotes.initLogin");
+        if (firstRender)
+        {
+            JS.InvokeVoidAsync("RecipeNotes.initLogin");
+        }
     }
 }

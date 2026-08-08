@@ -364,6 +364,16 @@
         row.appendChild(submit);
         form.appendChild(row);
 
+        if (invalid) {
+            var logout = make("button", "btn btn-outline-secondary", "Abmelden");
+            logout.type = "button";
+            logout.addEventListener("click", function () {
+                localStorage.removeItem(TOKEN_KEY);
+                renderLoginForm(container, false);
+            });
+            form.appendChild(logout);
+        }
+
         form.addEventListener("submit", function (event) {
             event.preventDefault();
             var token = input.value.trim();
@@ -431,6 +441,147 @@
         container.appendChild(logout);
     }
 
+    function loadAllNotes() {
+        return github("/repos/" + REPO + "/issues?labels=" + LABEL + "&state=open&per_page=100")
+            .then(function (r) {
+                if (r.status !== 200 || !r.body) {
+                    return [];
+                }
+                var notes = [];
+                r.body.forEach(function (issue) {
+                    var body = issue.body || "";
+                    var m = body.match(/<!--\s*slug=([^\s>]+)\s*-->/);
+                    notes.push({
+                        number: issue.number,
+                        body: body.replace(/<!--\s*slug=[^\s>]+\s*-->\s*/, ""),
+                        created: issue.created_at,
+                        slug: m ? m[1] : ""
+                    });
+                });
+                return notes;
+            });
+    }
+
+    function slugify(title) {
+        return title
+            .toLowerCase()
+            .replace(/\u00e4/g, "ae")
+            .replace(/\u00f6/g, "oe")
+            .replace(/\u00fc/g, "ue")
+            .replace(/\u00df/g, "ss")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+    }
+
+    function renderOverview(container) {
+        container.innerHTML = "";
+        var list = make("div", "notes-list");
+        var hint = make("p", "text-muted", "Lädt …");
+        list.appendChild(hint);
+        container.appendChild(list);
+
+        Promise.all([
+            fetch("recipes/index.json").then(function (r) {
+                return r.ok ? r.json() : [];
+            }).then(function (entries) {
+                var map = {};
+                entries.forEach(function (entry) {
+                    var title = "";
+                    entry.content.split("\n").some(function (line) {
+                        if (line.trim().startsWith("# ")) {
+                            title = line.trim().substring(2).trim();
+                            return true;
+                        }
+                        return false;
+                    });
+                    if (title && !map[slugify(title)]) {
+                        map[slugify(title)] = title;
+                    }
+                });
+                return map;
+            }),
+            loadAllNotes()
+        ]).then(function (parts) {
+            var recipes = parts[0];
+            var notes = parts[1];
+            hint.remove();
+            if (!notes.length) {
+                list.appendChild(make("p", "text-muted", "Keine offenen Anmerkungen – alles erledigt."));
+                return;
+            }
+            notes.forEach(function (note) {
+                var item = make("div", "notes-item");
+                var clear = list.querySelector("p.text-muted");
+                if (clear) {
+                    clear.remove();
+                }
+                var meta = make("div", "notes-meta");
+                var date = note.created ? new Date(note.created).toLocaleDateString("de-DE") : "";
+                meta.appendChild(make("span", "text-muted", "#" + note.number + " · " + date));
+
+                var link;
+                if (note.slug === "allgemein") {
+                    link = make("a", "notes-link", "Allgemeines →");
+                    link.href = basePath() + "/notizen";
+                } else if (recipes[note.slug]) {
+                    link = make("a", "notes-link", recipes[note.slug] + " →");
+                    link.href = basePath() + "/" + note.slug;
+                } else {
+                    link = make("span", "notes-link text-muted", note.slug || "ohne Rezept");
+                }
+                meta.appendChild(link);
+
+                var del = make("button", "btn btn-sm btn-link notes-delete", "Löschen");
+                del.type = "button";
+                del.addEventListener("click", function () {
+                    del.disabled = true;
+                    deleteNote(note.number).then(function (r) {
+                        if (r.status === 200 || r.status === 201) {
+                            item.remove();
+                            if (!list.querySelector(".notes-item")) {
+                                list.appendChild(make("p", "text-muted", "Keine offenen Anmerkungen – alles erledigt."));
+                            }
+                            return;
+                        }
+                        del.disabled = false;
+                    }).catch(function () {
+                        del.disabled = false;
+                    });
+                });
+                meta.appendChild(del);
+
+                item.appendChild(meta);
+                var body = make("div", "notes-body");
+                (note.body || "").split(/\r?\n/).forEach(function (line) {
+                    body.appendChild(text(line));
+                    body.appendChild(document.createElement("br"));
+                });
+                item.appendChild(body);
+                list.appendChild(item);
+            });
+        });
+    }
+
+    function initOverview() {
+        var container = document.getElementById("notes-overview");
+        if (!container) {
+            return;
+        }
+        var token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            getCurrentUser().then(function (login) {
+                if (login === ALLOWED_USER) {
+                    renderOverview(container);
+                    return;
+                }
+                localStorage.removeItem(TOKEN_KEY);
+                renderLoginPage(container);
+            });
+        } else {
+            renderLoginPage(container);
+        }
+    }
+
     window.RecipeNotes = {
         init: function (slug, title, emptyText) {
             var container = document.getElementById("recipe-notes");
@@ -447,6 +598,12 @@
             var container = document.getElementById("login-container");
             if (container) {
                 renderLoginPage(container);
+            }
+        },
+        initOverview: function () {
+            var container = document.getElementById("notes-overview");
+            if (container) {
+                initOverview();
             }
         }
     };
