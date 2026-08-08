@@ -1,7 +1,6 @@
 (function () {
     "use strict";
 
-    var CLIENT_ID = "Ov23ctSOYH1Q2mLHUUdz";
     var ALLOWED_USER = "Jigby";
     var REPO = "Jigby/rezepte";
     var LABEL = "anmerkung";
@@ -70,7 +69,6 @@
                 if (r.status !== 200 || !r.body) {
                     return [];
                 }
-                var marker = "slug=" + slug;
                 var notes = [];
                 r.body.forEach(function (issue) {
                     var body = issue.body || "";
@@ -90,14 +88,14 @@
             });
     }
 
-    function postNote(slug, title, text) {
+    function postNote(slug, title, noteText) {
         var marker = "<!-- slug=" + slug + " -->";
         return ensureLabel().then(function () {
             return github("/repos/" + REPO + "/issues", {
                 method: "POST",
                 body: JSON.stringify({
                     title: "Anmerkung: " + title,
-                    body: marker + "\n\n" + text,
+                    body: marker + "\n\n" + noteText,
                     labels: [LABEL]
                 })
             });
@@ -117,43 +115,92 @@
             getCurrentUser().then(function (login) {
                 if (!login) {
                     localStorage.removeItem(TOKEN_KEY);
-                    renderAnonymous(container, slug, title);
+                    renderAnonymous(container, slug, title, true);
                     return;
                 }
                 if (login !== ALLOWED_USER) {
+                    localStorage.removeItem(TOKEN_KEY);
                     renderDenied(container, login);
                     return;
                 }
                 renderPanel(container, slug, title);
             });
         } else {
-            renderAnonymous(container, slug, title);
+            renderAnonymous(container, slug, title, false);
         }
     }
 
-    function renderAnonymous(container, slug, title) {
+    function renderAnonymous(container, slug, title, invalid) {
         container.innerHTML = "";
-        var hint = make("p", "notes-hint", "Anmerkungen sind nur für den Besitzer dieser Website gedacht und haushalten nicht offen für andere. Du musst dich erst mit GitHub anmelden.");
-        var btn = make("button", "btn btn-primary", "Mit GitHub anmelden");
-        btn.type = "button";
-        btn.addEventListener("click", function () {
-            startLogin(container, slug, title);
-        });
+        var hint = make("p", "notes-hint",
+            "Anmerkungen zu diesem Rezept schreibt nur du. Verbinde dich einmalig mit deinem GitHub-Zugang – " +
+            "das Token wird nur in diesem Browser gespeichert.");
         container.appendChild(hint);
-        container.appendChild(btn);
+
+        var form = make("form", "notes-token-form");
+        var status = make("div", "notes-status");
+        if (invalid) {
+            status.textContent = "Das gespeicherte Token ist ungültig oder abgelaufen – neues Token eingeben.";
+            status.className += " notes-error";
+        }
+        var intro = make("p", "notes-hint",
+            "Token anlegen: GitHub → Settings → Developer settings → Personal access tokens → " +
+            "Fine-grained (nur Repo „rezepte“, Permission „Issues: Read and write“).");
+        var input = document.createElement("input");
+        input.type = "password";
+        input.className = "form-control";
+        input.autocomplete = "off";
+        input.placeholder = "GitHub-Token (ghp_… oder github_pat_…)";
+        var submit = make("button", "btn btn-primary", "Verbinden");
+        submit.type = "submit";
+        var row = make("div", "notes-token-row");
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var token = input.value.trim();
+            if (!token) {
+                return;
+            }
+            input.disabled = true;
+            submit.disabled = true;
+            status.textContent = "Prüfe Token …";
+            localStorage.setItem(TOKEN_KEY, token);
+            getCurrentUser().then(function (login) {
+                if (login === ALLOWED_USER) {
+                    renderPanel(container, slug, title);
+                    return;
+                }
+                localStorage.removeItem(TOKEN_KEY);
+                if (!login) {
+                    renderInvalid(container, slug, title);
+                } else {
+                    renderDenied(container, login);
+                }
+            }).catch(function () {
+                localStorage.removeItem(TOKEN_KEY);
+                renderInvalid(container, slug, title);
+            });
+        });
+
+        row.appendChild(input);
+        row.appendChild(submit);
+        form.appendChild(status);
+        form.appendChild(intro);
+        form.appendChild(row);
+        container.appendChild(form);
+    }
+
+    function renderInvalid(container, slug, title) {
+        container.innerHTML = "";
+        container.appendChild(make("p", "notes-hint notes-error",
+            "Token ungültig – bitte ein Token mit Issues-Schreibrecht für das Repo „rezepte\" verwenden."));
+        container.appendChild(backButton(container, slug, title));
     }
 
     function renderDenied(container, login) {
         container.innerHTML = "";
-        var hint = make("p", "notes-hint", "Dieser GitHub-Account (" + login + ") ist nicht freigegeben. Kommentare darf nur der Besitzer schreiben.");
-        var btn = make("button", "btn btn-outline-secondary", "Abmelden");
-        btn.type = "button";
-        btn.addEventListener("click", function () {
-            localStorage.removeItem(TOKEN_KEY);
-            renderAnonymous(container);
-        });
-        container.appendChild(hint);
-        container.appendChild(btn);
+        container.appendChild(make("p", "notes-hint notes-error",
+            "Dieser GitHub-Account (" + login + ") ist nicht freigegeben – nur der Besitzer kann Anmerkungen schreiben."));
     }
 
     function renderPanel(container, slug, title) {
@@ -163,13 +210,9 @@
         logout.type = "button";
         logout.addEventListener("click", function () {
             localStorage.removeItem(TOKEN_KEY);
-            renderAnonymous(container, slug, title);
+            renderAnonymous(container, slug, title, false);
         });
-        logged.appendChild(make(
-            "small",
-            "text-muted",
-            "Angemeldet als " + ALLOWED_USER
-        ));
+        logged.appendChild(make("small", "text-muted", "Verbunden als " + ALLOWED_USER));
         logged.appendChild(logout);
 
         var form = make("form", "notes-form");
@@ -198,9 +241,9 @@
                     status.textContent = "Gespeichert.";
                     return notesList(list, slug);
                 }
-                if (r.status === 401) {
+                if (r.status === 401 || r.status === 403) {
                     localStorage.removeItem(TOKEN_KEY);
-                    renderAnonymous(container, slug, title);
+                    renderAnonymous(container, slug, title, true);
                     return;
                 }
                 status.textContent = "Speichern fehlgeschlagen (Status " + r.status + ").";
@@ -218,10 +261,10 @@
         container.appendChild(listHeading);
         container.appendChild(list);
 
-        renderList(list, slug);
+        notesList(list, slug);
     }
 
-    function notesList(list, slug, status) {
+    function notesList(list, slug) {
         list.innerHTML = "";
         loadNotes(slug).then(function (notes) {
             if (!notes.length) {
@@ -255,94 +298,11 @@
         });
     }
 
-    function startLogin(container, slug, title) {
-        container.innerHTML = "";
-        container.appendChild(make("div", "notes-hint", "Verbindung zu GitHub wird aufgebaut …"));
-
-        fetch("https://github.com/login/device/code", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-            body: "client_id=" + encodeURIComponent(CLIENT_ID) + "&scope=public_repo"
-        }).then(function (r) {
-            return r.json().then(function (body) { return { status: r.status, body: body }; });
-        }).then(function (result) {
-            if (result.status !== 200 || !result.body || !result.body.device_code) {
-                container.innerHTML = "";
-                container.appendChild(make("p", "notes-error", "Login fehlgeschlagen: " + ((result.body && result.body.error_description) || result.body || "unbekannter Fehler")));
-                container.appendChild(backButton(container, slug, title));
-                return;
-            }
-            showDeviceCode(container, slug, title, result.body);
-        }).catch(function () {
-            container.innerHTML = "";
-            container.appendChild(make("p", "notes-error", "Login fehlgeschlagen – der GitHub-Login-Dienst ist hier nicht erreichbar."));
-            container.appendChild(backButton(container, slug, title));
-        });
-    }
-
-    function showDeviceCode(container, slug, title, info) {
-        container.innerHTML = "";
-        var hint = make("p", "notes-hint", "Code eingeben auf github.com/login/device – dann bestätigst du die Freigabe:");
-        var code = make("div", "notes-code", info.user_code);
-        var link = make("a", "btn btn-outline-secondary", "Github öffnen");
-        link.href = info.verification_uri || "https://github.com/login/device";
-        link.target = "_blank";
-        link.rel = "noopener";
-        container.appendChild(hint);
-        container.appendChild(code);
-        container.appendChild(link);
-
-        var interval = Math.max(info.interval || 5, 5);
-        var attempts = Math.floor((info.expires_in || 900) / interval);
-        var status = make("div", "notes-status", "Warte auf Bestätigung …");
-        container.appendChild(status);
-
-        function poll(remaining) {
-            if (remaining <= 0) {
-                status.textContent = "Zeit abgelaufen – bitte erneut beginnen.";
-                return;
-            }
-            fetch("https://github.com/login/oauth/access_token", {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-                body: "client_id=" + encodeURIComponent(CLIENT_ID) +
-                    "&device_code=" + encodeURIComponent(info.device_code) +
-                    "&grant_type=urn:ietf:params:oauth:grant-type:device_code"
-            }).then(function (r) {
-                return r.json().then(function (data) { return { status: r.status, body: data }; });
-            }).then(function (result) {
-                if (result.body && result.body.access_token) {
-                    var token = result.body.access_token;
-                    localStorage.setItem(TOKEN_KEY, token);
-                    getCurrentUser().then(function (login) {
-                        if (login === ALLOWED_USER) {
-                            renderPanel(container, slug, title);
-                        } else {
-                            localStorage.removeItem(TOKEN_KEY);
-                            renderDenied(container, login || "unbekannt");
-                        }
-                    });
-                    return;
-                }
-                if (result.body && result.body.error === "authorization_pending") {
-                    setTimeout(function () { poll(remaining - 1); }, interval * 1000);
-                    return;
-                }
-                status.textContent = "Bestätigung fehlgeschlagen: " + (result.body && (result.body.error_description || result.body.error) || ("Status " + result.status));
-                container.appendChild(backButton(container, slug, title));
-            }).catch(function () {
-                status.textContent = "Login-Verbindung fehlgeschlagen.";
-                container.appendChild(backButton(container, slug, title));
-            });
-        }
-        poll(180);
-    }
-
     function backButton(container, slug, title) {
         var btn = make("button", "btn btn-outline-secondary", "Zurück");
         btn.type = "button";
         btn.addEventListener("click", function () {
-            render(container, slug, title);
+            renderAnonymous(container, slug, title, false);
         });
         return btn;
     }

@@ -338,3 +338,20 @@ h1:focus {
 .notes-delete:hover {
     color: #b32121;
 }
+
+.notes-token-form {
+    max-width: 40rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    margin-top: .75rem;
+}
+
+.notes-token-row {
+    display: flex;
+    gap: .5rem;
+}
+
+.notes-token-row .form-control {
+    flex: 1;
+}
