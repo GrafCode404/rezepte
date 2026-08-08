@@ -1,0 +1,28 @@
+@page "/notizen"
+@inject IJSRuntime JS
+
+<PageTitle>Allgemeine Anmerkungen – Rezepte</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <a href="./" class="breadcrumb-link text-muted">&larr; Zur Übersicht</a>
+</nav>
+
+<h1>Allgemeine Anmerkungen</h1>
+
+<p class="text-muted">
+    Platz für Wünsche zu neuen Rezepten und allgemeine Anmerkungen zur App.
+</p>
+
+<div id="recipe-notes"></div>
+
+@code {
+    private const string Slug = "allgemein";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JS.InvokeVoidAsync("RecipeNotes.init", Slug, "Allgemeines", "Noch keine allgemeinen Anmerkungen.");
+        }
+    }
+}

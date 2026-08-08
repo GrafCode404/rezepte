@@ -117,13 +117,13 @@
         });
     }
 
-    function render(container, slug, title) {
+    function render(container, slug, title, emptyText) {
         var token = localStorage.getItem(TOKEN_KEY);
         if (token) {
             getCurrentUser().then(function (login) {
                 if (!login) {
                     localStorage.removeItem(TOKEN_KEY);
-                    renderAnonymous(container, slug, title);
+                    renderAnonymous(container, slug, title, emptyText);
                     return;
                 }
                 if (login !== ALLOWED_USER) {
@@ -131,19 +131,19 @@
                     renderDenied(container, login);
                     return;
                 }
-                renderPanel(container, slug, title);
+                renderPanel(container, slug, title, emptyText);
             });
         } else {
-            renderAnonymous(container, slug, title);
+            renderAnonymous(container, slug, title, emptyText);
         }
     }
 
-    function renderAnonymous(container, slug, title) {
+    function renderAnonymous(container, slug, title, emptyText) {
         container.innerHTML = "";
         container.appendChild(make("h3", "notes-heading", "Bisherige Anmerkungen"));
         var list = make("div", "notes-list");
         container.appendChild(list);
-        notesList(list, slug, false);
+        notesList(list, slug, false, emptyText);
     }
 
     function renderDenied(container, login) {
@@ -155,7 +155,7 @@
         container.appendChild(btn);
     }
 
-    function renderPanel(container, slug, title) {
+    function renderPanel(container, slug, title, emptyText) {
         container.innerHTML = "";
 
         var form = make("form", "notes-form");
@@ -189,7 +189,7 @@
                             created: r.body.created_at
                         }, true, true);
                     }
-                    notesList(list, slug, true);
+                    notesList(list, slug, true, emptyText);
                     return;
                 }
                 if (r.status === 401 || r.status === 403) {
@@ -211,7 +211,7 @@
         container.appendChild(listHeading);
         container.appendChild(list);
 
-        notesList(list, slug, true);
+        notesList(list, slug, true, emptyText);
     }
 
     function showNoteError(list, message) {
@@ -223,10 +223,10 @@
         list.insertBefore(err, list.firstChild);
     }
 
-    function emptyHint(list) {
+    function emptyHint(list, emptyText) {
         var hint = list.querySelector("p.text-muted");
         if (!hint) {
-            list.appendChild(make("p", "text-muted", "Noch keine Anmerkungen zu diesem Rezept."));
+            list.appendChild(make("p", "text-muted", emptyText || "Noch keine Anmerkungen zu diesem Rezept."));
         }
     }
 
@@ -285,7 +285,7 @@
         }
     }
 
-    function notesList(list, slug, canDelete) {
+    function notesList(list, slug, canDelete, emptyText) {
         list.querySelectorAll("p").forEach(function (p) {
             if (p.classList.contains("notes-hint") || p.classList.contains("text-muted")) {
                 p.remove();
@@ -312,7 +312,7 @@
                 renderNoteRow(list, note, canDelete);
             });
             if (!any) {
-                emptyHint(list);
+                emptyHint(list, emptyText);
             }
         });
     }
@@ -432,7 +432,7 @@
     }
 
     window.RecipeNotes = {
-        init: function (slug, title) {
+        init: function (slug, title, emptyText) {
             var container = document.getElementById("recipe-notes");
             if (!container) {
                 return;
@@ -441,7 +441,7 @@
                 return;
             }
             container.dataset.slug = slug;
-            render(container, slug, title);
+            render(container, slug, title, emptyText);
         },
         initLogin: function () {
             var container = document.getElementById("login-container");

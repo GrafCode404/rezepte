@@ -43,9 +43,49 @@ public class RecipeService
         }
 
         var needle = query.Trim();
-        return _recipes.Where(r =>
-            r.Title.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-            r.SearchText.Contains(needle, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        var direct = new List<Recipe>();
+        var partial = new List<Recipe>();
+        foreach (var recipe in _recipes)
+        {
+            if (recipe.Title.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
+                recipe.Ingredients.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            {
+                if (ContainsWord(recipe.Title, needle) || ContainsWord(recipe.Ingredients, needle))
+                {
+                    direct.Add(recipe);
+                }
+                else
+                {
+                    partial.Add(recipe);
+                }
+            }
+        }
+
+        direct.AddRange(partial);
+        return direct;
+    }
+
+    private static bool ContainsWord(string text, string term)
+    {
+        var index = 0;
+        while (index + term.Length <= text.Length)
+        {
+            index = text.IndexOf(term, index, StringComparison.OrdinalIgnoreCase);
+            if (index < 0)
+            {
+                return false;
+            }
+            var before = index == 0 || !char.IsLetterOrDigit(text[index - 1]);
+            var after = index + term.Length >= text.Length ||
+                        !char.IsLetterOrDigit(text[index + term.Length]);
+            if (before && after)
+            {
+                return true;
+            }
+            index += term.Length;
+        }
+        return false;
     }
 
     private async Task LoadAsync()
@@ -65,10 +105,76 @@ public class RecipeService
                 Slug = Slugify(title),
                 FileName = entry.Name,
                 Html = Markdown.ToHtml(RemoveHeaderBlock(cleaned, title), pipeline),
-                SearchText = cleaned,
+                Ingredients = ExtractIngredients(cleaned),
                 Facts = facts,
             });
         }
+    }
+
+    private static string ExtractIngredients(string markdown)
+    {
+        var names = new List<string>();
+        var inTable = false;
+        foreach (var line in markdown.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (!trimmed.StartsWith("|"))
+            {
+                if (inTable)
+                {
+                    break;
+                }
+                continue;
+            }
+
+            if (!inTable && trimmed.Contains("Zutaten"))
+            {
+                inTable = true;
+                continue;
+            }
+
+            if (!inTable)
+            {
+                continue;
+            }
+
+            var cells = trimmed.Split('|');
+            if (cells.Length < 3)
+            {
+                continue;
+            }
+
+            var first = cells[1].Trim();
+            if (first.StartsWith(":") || IsSeparatorRow(first))
+            {
+                continue;
+            }
+
+            var name = first.Replace("*", string.Empty).Trim();
+            if (name.Length > 0)
+            {
+                names.Add(name);
+            }
+        }
+
+        return string.Join(' ', names);
+    }
+
+    private static bool IsSeparatorRow(string cell)
+    {
+        if (cell.Length == 0)
+        {
+            return true;
+        }
+        for (var i = 0; i < cell.Length; i++)
+        {
+            var c = cell[i];
+            if (c != '-' && c != ':' && c != ' ')
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static string ParseTitle(string markdown, string fallback)
