@@ -247,3 +247,94 @@ h1:focus {
         transform: scale(1.06);
     }
 }
+
+#recipe-notes {
+    max-width: 45rem;
+}
+
+.notes-hint {
+    font-size: .9rem;
+}
+
+.notes-logged-in {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .5rem;
+}
+
+.notes-form {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    align-items: flex-start;
+}
+
+.notes-form label {
+    font-weight: 600;
+}
+
+.notes-textarea {
+    width: 100%;
+    max-width: 40rem;
+}
+
+.notes-status {
+    font-size: .875rem;
+    color: #6c757d;
+}
+
+.notes-heading {
+    font-size: 1.05rem;
+    margin-top: 1.25rem;
+}
+
+.notes-list {
+    margin-top: .5rem;
+}
+
+.notes-item {
+    border: 1px solid #e9e2d7;
+    border-radius: .5rem;
+    padding: .75rem 1rem;
+    margin-bottom: .75rem;
+    background: #fffdf8;
+}
+
+.notes-item .notes-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notes-body {
+    margin-top: .35rem;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.notes-code {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    background: #fff7ed;
+    border: 1px dashed #d4b08c;
+    border-radius: .5rem;
+    padding: .75rem 1.25rem;
+    display: inline-block;
+    margin-bottom: .75rem;
+}
+
+.notes-error {
+    color: #b32121;
+}
+
+.notes-delete {
+    padding: 0 .25rem;
+    color: #8a6b4f;
+}
+
+.notes-delete:hover {
+    color: #b32121;
+}

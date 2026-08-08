@@ -3,6 +3,7 @@
 @using Net.Codecrete.QrCodeGenerator
 @using RezepteWeb.Models
 @using RezepteWeb.Services
+@inject IJSRuntime JS
 @inject RecipeService RecipeService
 @inject NavigationManager NavigationManager
 
@@ -50,17 +51,10 @@ else
     <section class="recipe-comments" aria-label="Kommentare">
         <h2>Kommentare &amp; Anmerkungen</h2>
         <p class="text-muted">
-            Hier kannst du beim Backen gefundene Fehler oder Anmerkungen notieren.
-            Das Rezept selbst änderst du später explizit über die Datei im Git.
+            Beim Backen etwas aufgefallen? Nur du kannst hier Anmerkungen hinterlassen –
+            sie landen als GitHub-Issue und du kannst das Rezept später in der Datei korrigieren.
         </p>
-        <div class="utterances-container">
-            <script src="https://utteranc.es/client.js"
-                    repo="Jigby/rezepte"
-                    issue-term="pathname"
-                    theme="github-light"
-                    crossorigin="anonymous"
-                    async></script>
-        </div>
+        <div id="recipe-notes"></div>
     </section>
 }
 
@@ -79,6 +73,14 @@ else
         {
             var url = NavigationManager.Uri;
             qrSvg = QrCode.EncodeText(url, QrCode.Ecc.Medium).ToSvgString(2);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (recipe is not null)
+        {
+            await JS.InvokeVoidAsync("RecipeNotes.init", Slug, recipe.Title);
         }
     }
 }
