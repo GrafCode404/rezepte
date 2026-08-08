@@ -43,8 +43,8 @@ else
 
     private RezepteWeb.Models.Recipe? recipe;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        recipe = RecipeService.GetBySlug(Slug ?? string.Empty);
+        recipe = await RecipeService.GetBySlugAsync(Slug ?? string.Empty);
     }
 }

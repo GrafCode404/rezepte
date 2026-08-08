@@ -1,36 +1,13 @@
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using RezepteWeb.Components;
 using RezepteWeb.Services;
 
-namespace RezepteWeb;
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-public class Program
-{
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+builder.Services.AddScoped<RecipeService>();
 
-        // Add services to the container.
-        builder.Services.AddRazorComponents();
-
-        var recipesPath = Path.Combine(
-            builder.Environment.ContentRootPath,
-            builder.Configuration["Recipes:Path"] ?? "Content/Recipes");
-        builder.Services.AddSingleton(new RecipeService(recipesPath));
-
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Error");
-        }
-
-        app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-        app.UseAntiforgery();
-
-        app.MapStaticAssets();
-        app.MapRazorComponents<App>();
-
-        app.Run();
-    }
-}
+await builder.Build().RunAsync();

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rezepte</title>
+    <link rel="preload" id="webassembly" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="RezepteWeb.styles.css" rel="stylesheet" />
+    <script type="importmap"></script>
+    <script>
+        (function () {
+            // Basis-Pfad passend zur Umgebung: GitHub Pages ("/rezepte/") oder lokal ("/").
+            var base = location.pathname.indexOf('/rezepte') === 0 ? '/rezepte/' : '/';
+            var baseTag = document.createElement('base');
+            baseTag.href = base;
+            document.head.appendChild(baseTag);
+
+            // Zielpfad wiederherstellen, der von 404.html (Suchergebnis-Fallback) gemerkt wurde.
+            var ret = sessionStorage.getItem('rezept-return');
+            if (ret) {
+                sessionStorage.removeItem('rezept-return');
+                history.replaceState(null, '', base + ret);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Es ist ein Fehler aufgetreten.
+        <a href="." class="reload">Neu laden</a>
+        <span class="dismiss">x</span>
+    </div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+</body>
+
+</html>

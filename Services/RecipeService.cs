@@ -1,4 +1,6 @@
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json.Serialization;
 using Markdig;
 using RezepteWeb.Models;
 
@@ -6,20 +8,35 @@ namespace RezepteWeb.Services;
 
 public class RecipeService
 {
-    private readonly List<Recipe> _recipes;
+    private readonly HttpClient _http;
+    private readonly List<Recipe> _recipes = [];
+    private Task? _loadTask;
 
-    public RecipeService(string recipeDirectory)
+    public RecipeService(HttpClient http)
     {
-        _recipes = Load(recipeDirectory);
+        _http = http;
     }
 
-    public IReadOnlyList<Recipe> GetAll() => _recipes;
+    public static MarkdownPipeline CreatePipeline()
+        => new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
-    public Recipe? GetBySlug(string slug)
-        => _recipes.FirstOrDefault(r => r.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
+    public Task EnsureLoadedAsync() => _loadTask ??= LoadAsync();
 
-    public IEnumerable<Recipe> Search(string? query)
+    public async Task<List<Recipe>> GetRecipesAsync()
     {
+        await EnsureLoadedAsync();
+        return _recipes;
+    }
+
+    public async Task<Recipe?> GetBySlugAsync(string slug)
+    {
+        await EnsureLoadedAsync();
+        return _recipes.FirstOrDefault(r => r.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<List<Recipe>> SearchAsync(string? query)
+    {
+        await EnsureLoadedAsync();
         if (string.IsNullOrWhiteSpace(query))
         {
             return _recipes;
@@ -28,67 +45,35 @@ public class RecipeService
         var needle = query.Trim();
         return _recipes.Where(r =>
             r.Title.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-            r.SearchText.Contains(needle, StringComparison.OrdinalIgnoreCase));
+            r.SearchText.Contains(needle, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
-    private static List<Recipe> Load(string directory)
+    private async Task LoadAsync()
     {
-        var recipes = new List<Recipe>();
-        if (!Directory.Exists(directory))
-        {
-            return recipes;
-        }
-
+        var entries = await _http.GetFromJsonAsync<RecipeEntry[]>("recipes/index.json") ?? [];
         var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
-        foreach (var file in Directory.EnumerateFiles(directory, "*.md").OrderBy(Path.GetFileName))
+        foreach (var entry in entries.OrderBy(e => e.Name))
         {
-            var markdown = File.ReadAllText(file);
-            var title = ParseTitle(markdown, Path.GetFileNameWithoutExtension(file));
-            var facts = ParseFacts(markdown);
-            var cleaned = markdown.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase);
+            var title = ParseTitle(entry.Content, Path.GetFileNameWithoutExtension(entry.Name));
+            var facts = ParseFacts(entry.Content);
+            var cleaned = entry.Content.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase);
 
-            recipes.Add(new Recipe
+            _recipes.Add(new Recipe
             {
                 Title = title,
                 Slug = Slugify(title),
-                FileName = Path.GetFileName(file),
+                FileName = entry.Name,
                 Html = Markdown.ToHtml(RemoveHeaderBlock(cleaned, title), pipeline),
                 SearchText = cleaned,
                 Facts = facts,
             });
         }
-
-        return recipes;
-    }
-
-    private static string RemoveHeaderBlock(string markdown, string title)
-    {
-        var lines = new List<string>();
-        var titleLineFound = false;
-
-        foreach (var line in markdown.Split('\n'))
-        {
-            if (!titleLineFound && line.TrimStart().StartsWith("# " + title, StringComparison.OrdinalIgnoreCase))
-            {
-                titleLineFound = true;
-                continue;
-            }
-
-            if (line.TrimStart().StartsWith("* **"))
-            {
-                continue;
-            }
-
-            lines.Add(line);
-        }
-
-        return string.Join('\n', lines);
     }
 
     private static string ParseTitle(string markdown, string fallback)
     {
-        var firstLine = markdown.Split('\n').FirstOrDefault(l => l.StartsWith("# "));
+        var firstLine = markdown.Split('\n').FirstOrDefault(l => l.TrimStart().StartsWith("# "));
         return firstLine?[2..].Trim() ?? fallback;
     }
 
@@ -117,6 +102,30 @@ public class RecipeService
         return facts;
     }
 
+    private static string RemoveHeaderBlock(string markdown, string title)
+    {
+        var lines = new List<string>();
+        var titleLineFound = false;
+
+        foreach (var line in markdown.Split('\n'))
+        {
+            if (!titleLineFound && line.TrimStart().StartsWith("# " + title, StringComparison.OrdinalIgnoreCase))
+            {
+                titleLineFound = true;
+                continue;
+            }
+
+            if (line.TrimStart().StartsWith("* **"))
+            {
+                continue;
+            }
+
+            lines.Add(line);
+        }
+
+        return string.Join('\n', lines);
+    }
+
     private static string Slugify(string title)
     {
         var normalized = title
@@ -143,5 +152,14 @@ public class RecipeService
         }
 
         return slug.ToString().Trim('-');
+    }
+
+    private class RecipeEntry
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = "";
+
+        [JsonPropertyName("content")]
+        public string Content { get; set; } = "";
     }
 }

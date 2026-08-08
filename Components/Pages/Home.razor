@@ -16,14 +16,14 @@
 
 @if (string.IsNullOrWhiteSpace(Search))
 {
-    <p class="text-muted">@RecipeService.GetAll().Count Rezepte</p>
+    <p class="text-muted">@recipes.Count Rezepte</p>
 }
 else
 {
-    <p class="text-muted">@Results.Count() Treffer für „@Search“</p>
+    <p class="text-muted">@results.Count Treffer für „@Search“</p>
 }
 
-@if (!Results.Any())
+@if (!results.Any())
 {
     <div class="alert alert-info">
         Kein Rezept gefunden. Bitte versuche einen anderen Suchbegriff.
@@ -32,7 +32,7 @@ else
 else
 {
     <div class="recipe-grid">
-        @foreach (var recipe in Results)
+        @foreach (var recipe in results)
         {
             <a class="card recipe-card" href="/rezepte/@recipe.Slug">
                 <div class="card-body">
@@ -56,5 +56,12 @@ else
     [SupplyParameterFromQuery(Name = "q")]
     public string? Search { get; set; }
 
-    private IEnumerable<Recipe> Results => RecipeService.Search(Search);
+    private List<Recipe> recipes = [];
+    private List<Recipe> results = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        recipes = await RecipeService.GetRecipesAsync();
+        results = await RecipeService.SearchAsync(Search);
+    }
 }
