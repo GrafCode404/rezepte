@@ -38,10 +38,18 @@ else
 
     @if (qrSvg is not null)
     {
-        <figure class="recipe-qr">
-            @((MarkupString)qrSvg)
-            <figcaption>Link zu diesem Rezept</figcaption>
-        </figure>
+        <section class="recipe-share" aria-label="Teilen">
+            <h3>Teilen</h3>
+            <div class="share-buttons">
+                <a class="btn btn-share" href="@waLink" target="_blank" rel="noopener">WhatsApp</a>
+                <a class="btn btn-share" href="@mailLink">E-Mail</a>
+                <button type="button" class="btn btn-share" id="share-copy" @onclick="CopyLink">Link kopieren</button>
+            </div>
+            <figure class="recipe-qr">
+                @((MarkupString)qrSvg)
+                <figcaption>Link als QR-Code</figcaption>
+            </figure>
+        </section>
     }
 
     <div class="recipe-content">
@@ -61,6 +69,8 @@ else
 
     private RezepteWeb.Models.Recipe? recipe;
     private string? qrSvg;
+    private string waLink = "";
+    private string mailLink = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -70,6 +80,17 @@ else
         {
             var url = NavigationManager.Uri;
             qrSvg = QrCode.EncodeText(url, QrCode.Ecc.Medium).ToSvgString(2);
+            waLink = "https://wa.me/?text=" + Uri.EscapeDataString(recipe.Title + " – " + url);
+            mailLink = "mailto:?subject=" + Uri.EscapeDataString(recipe.Title) +
+                "&body=" + Uri.EscapeDataString(url);
+        }
+    }
+
+    private async Task CopyLink()
+    {
+        if (recipe is not null)
+        {
+            await JS.InvokeVoidAsync("RecipeShare.copy", NavigationManager.Uri);
         }
     }
 
