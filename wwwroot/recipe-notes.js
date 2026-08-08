@@ -140,13 +140,6 @@
 
     function renderAnonymous(container, slug, title) {
         container.innerHTML = "";
-        var hint = make("p", "notes-hint",
-            "Anmerkungen schreibt nur du. Melde dich über den Zugang an, um Anmerkungen zu hinterlassen.");
-        var btn = make("a", "btn btn-primary", "Zugang");
-        btn.href = loginPath();
-        container.appendChild(hint);
-        container.appendChild(btn);
-
         container.appendChild(make("h3", "notes-heading", "Bisherige Anmerkungen"));
         var list = make("div", "notes-list");
         container.appendChild(list);
@@ -164,15 +157,6 @@
 
     function renderPanel(container, slug, title) {
         container.innerHTML = "";
-        var logged = make("div", "notes-logged-in");
-        var logout = make("button", "btn btn-sm btn-outline-secondary", "Abmelden");
-        logout.type = "button";
-        logout.addEventListener("click", function () {
-            localStorage.removeItem(TOKEN_KEY);
-            renderAnonymous(container, slug, title);
-        });
-        logged.appendChild(make("small", "text-muted", "Verbunden als " + ALLOWED_USER));
-        logged.appendChild(logout);
 
         var form = make("form", "notes-form");
         var area = document.createElement("textarea");
@@ -215,12 +199,20 @@
         var list = make("div", "notes-list");
         list.appendChild(make("p", "notes-hint", "Lädt …"));
 
-        container.appendChild(logged);
         container.appendChild(form);
         container.appendChild(listHeading);
         container.appendChild(list);
 
         notesList(list, slug, true);
+    }
+
+    function showNoteError(list, message) {
+        var existing = list.querySelector(".notes-error");
+        if (existing) {
+            existing.remove();
+        }
+        var err = make("p", "notes-hint notes-error", message);
+        list.insertBefore(err, list.firstChild);
     }
 
     function notesList(list, slug, canDelete) {
@@ -240,8 +232,16 @@
                     del.type = "button";
                     del.addEventListener("click", function () {
                         del.disabled = true;
-                        deleteNote(note.number).then(function () {
-                            notesList(list, slug, true);
+                        deleteNote(note.number).then(function (r) {
+                            if (r.status === 200 || r.status === 201) {
+                                notesList(list, slug, true);
+                                return;
+                            }
+                            del.disabled = false;
+                            showNoteError(list, "Löschen fehlgeschlagen (Status " + r.status + ").");
+                        }).catch(function () {
+                            del.disabled = false;
+                            showNoteError(list, "Löschen fehlgeschlagen – keine Verbindung zu GitHub.");
                         });
                     });
                     meta.appendChild(del);
