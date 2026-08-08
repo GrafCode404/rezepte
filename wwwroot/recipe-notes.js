@@ -1,8 +1,8 @@
 (function () {
     "use strict";
 
-    var ALLOWED_USER = "Jigby";
-    var REPO = "Jigby/rezepte";
+    var ALLOWED_USER = "GrafCode404";
+    var REPO = "GrafCode404/rezepte";
     var LABEL = "anmerkung";
     var TOKEN_KEY = "rezepte.notes.token";
 
