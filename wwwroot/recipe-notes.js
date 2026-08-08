@@ -42,7 +42,7 @@
         if (token) {
             headers["Authorization"] = "Bearer " + token;
         }
-        return fetch("https://api.github.com" + path, Object.assign({ headers: headers }, options))
+        return fetch("https://api.github.com" + path, Object.assign({ headers: headers, cache: "no-store" }, options))
             .then(function (r) {
                 return r.json().catch(function () { return null; }).then(function (body) {
                     return { status: r.status, body: body };
@@ -182,7 +182,15 @@
                 if (r.status === 201 || r.status === 200) {
                     area.value = "";
                     status.textContent = "Gespeichert.";
-                    return notesList(list, slug, true);
+                    if (r.body && r.body.number) {
+                        renderNoteRow(list, {
+                            number: r.body.number,
+                            body: value,
+                            created: r.body.created_at
+                        }, true, true);
+                    }
+                    notesList(list, slug, true);
+                    return;
                 }
                 if (r.status === 401 || r.status === 403) {
                     localStorage.removeItem(TOKEN_KEY);
@@ -215,47 +223,97 @@
         list.insertBefore(err, list.firstChild);
     }
 
-    function notesList(list, slug, canDelete) {
-        list.innerHTML = "";
-        loadNotes(slug).then(function (notes) {
-            if (!notes.length) {
-                list.appendChild(make("p", "text-muted", "Noch keine Anmerkungen zu diesem Rezept."));
-                return;
-            }
-            notes.forEach(function (note) {
-                var item = make("div", "notes-item");
-                var meta = make("div", "notes-meta");
-                var date = note.created ? new Date(note.created).toLocaleDateString("de-DE") : "";
-                meta.appendChild(make("span", "text-muted", "#" + note.number + " · " + date));
-                if (canDelete) {
-                    var del = make("button", "btn btn-sm btn-link notes-delete", "Löschen");
-                    del.type = "button";
-                    del.addEventListener("click", function () {
-                        del.disabled = true;
-                        deleteNote(note.number).then(function (r) {
-                            if (r.status === 200 || r.status === 201) {
-                                notesList(list, slug, true);
-                                return;
-                            }
-                            del.disabled = false;
-                            showNoteError(list, "Löschen fehlgeschlagen (Status " + r.status + ").");
-                        }).catch(function () {
-                            del.disabled = false;
-                            showNoteError(list, "Löschen fehlgeschlagen – keine Verbindung zu GitHub.");
-                        });
-                    });
-                    meta.appendChild(del);
-                }
-                item.appendChild(meta);
-                var body = make("div", "notes-body");
-                var lines = (note.body || "").split(/\r?\n/);
-                lines.forEach(function (line) {
-                    body.appendChild(text(line));
-                    body.appendChild(document.createElement("br"));
+    function emptyHint(list) {
+        var hint = list.querySelector("p.text-muted");
+        if (!hint) {
+            list.appendChild(make("p", "text-muted", "Noch keine Anmerkungen zu diesem Rezept."));
+        }
+    }
+
+    function removedIds(list) {
+        var raw = list.getAttribute("data-removed") || "";
+        return raw ? raw.split(",") : [];
+    }
+
+    function renderNoteRow(list, note, canDelete, atTop) {
+        var hint = list.querySelector("p.text-muted");
+        if (hint) {
+            hint.remove();
+        }
+        var item = make("div", "notes-item");
+        item.setAttribute("data-note", note.number);
+        var meta = make("div", "notes-meta");
+        var date = note.created ? new Date(note.created).toLocaleDateString("de-DE") : "";
+        meta.appendChild(make("span", "text-muted", "#" + note.number + " · " + date));
+        if (canDelete) {
+            var del = make("button", "btn btn-sm btn-link notes-delete", "Löschen");
+            del.type = "button";
+            del.addEventListener("click", function () {
+                del.disabled = true;
+                deleteNote(note.number).then(function (r) {
+                    if (r.status === 200 || r.status === 201) {
+                        item.remove();
+                        var removed = (list.getAttribute("data-removed") || "");
+                        list.setAttribute("data-removed",
+                            removed ? removed + "," + note.number : String(note.number));
+                        if (!list.querySelector(".notes-item")) {
+                            emptyHint(list);
+                        }
+                        return;
+                    }
+                    del.disabled = false;
+                    showNoteError(list, "Löschen fehlgeschlagen (Status " + r.status + ").");
+                }).catch(function () {
+                    del.disabled = false;
+                    showNoteError(list, "Löschen fehlgeschlagen – keine Verbindung zu GitHub.");
                 });
-                item.appendChild(body);
-                list.appendChild(item);
             });
+            meta.appendChild(del);
+        }
+        item.appendChild(meta);
+        var body = make("div", "notes-body");
+        var lines = (note.body || "").split(/\r?\n/);
+        lines.forEach(function (line) {
+            body.appendChild(text(line));
+            body.appendChild(document.createElement("br"));
+        });
+        item.appendChild(body);
+        if (atTop && list.firstChild) {
+            list.insertBefore(item, list.firstChild);
+        } else {
+            list.appendChild(item);
+        }
+    }
+
+    function notesList(list, slug, canDelete) {
+        list.querySelectorAll("p").forEach(function (p) {
+            if (p.classList.contains("notes-hint") || p.classList.contains("text-muted")) {
+                p.remove();
+            }
+        });
+        var known = {};
+        var removed = removedIds(list);
+        list.querySelectorAll(".notes-item").forEach(function (el) {
+            if (el.dataset.note) {
+                known[el.dataset.note] = true;
+            }
+        });
+        removed.forEach(function (id) {
+            known[id] = true;
+        });
+        loadNotes(slug).then(function (notes) {
+            var any = Object.keys(known).length > 0;
+            notes.forEach(function (note) {
+                if (known[note.number]) {
+                    return;
+                }
+                known[note.number] = true;
+                any = true;
+                renderNoteRow(list, note, canDelete);
+            });
+            if (!any) {
+                emptyHint(list);
+            }
         });
     }
 
