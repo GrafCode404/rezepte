@@ -1,8 +1,10 @@
 @page "/rezepte/{Slug}"
 @page "/{Slug}"
+@using Net.Codecrete.QrCodeGenerator
 @using RezepteWeb.Models
 @using RezepteWeb.Services
 @inject RecipeService RecipeService
+@inject NavigationManager NavigationManager
 
 @if (recipe is null)
 {
@@ -33,6 +35,14 @@ else
         </ul>
     }
 
+    @if (qrSvg is not null)
+    {
+        <figure class="recipe-qr">
+            @((MarkupString)qrSvg)
+            <figcaption>Link zu diesem Rezept</figcaption>
+        </figure>
+    }
+
     <div class="recipe-content">
         @((MarkupString)recipe.Html)
     </div>
@@ -43,9 +53,16 @@ else
     public string? Slug { get; set; }
 
     private RezepteWeb.Models.Recipe? recipe;
+    private string? qrSvg;
 
     protected override async Task OnParametersSetAsync()
     {
         recipe = await RecipeService.GetBySlugAsync(Slug ?? string.Empty);
+
+        if (recipe is not null)
+        {
+            var url = NavigationManager.Uri;
+            qrSvg = QrCode.EncodeText(url, QrCode.Ecc.Medium).ToSvgString(2);
+        }
     }
 }

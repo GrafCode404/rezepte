@@ -93,9 +93,31 @@ h1:focus {
 }
 
 .recipe-content {
+    clear: both;
     margin-top: 1.5rem;
     max-width: 60rem;
     line-height: 1.6;
+}
+
+.recipe-qr {
+    float: right;
+    margin: 0 0 1rem 1.5rem;
+    text-align: center;
+}
+
+.recipe-qr svg {
+    width: 130px;
+    height: 130px;
+    padding: .5rem;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+    background: #fff;
+}
+
+.recipe-qr figcaption {
+    margin-top: .25rem;
+    font-size: .75rem;
+    color: #6c757d;
 }
 
 .recipe-content h2 {

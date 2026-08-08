@@ -28,3 +28,13 @@ Die Seite ist dann unter http://localhost:5005 erreichbar (Port laut `Properties
 ## Suche
 
 Volltextsuche über Titel und Inhalt aller Rezepte über das Suchfeld auf der Startseite.
+
+## Als App installieren
+
+Die Seite ist eine Progressive Web App (Manifest + Service Worker in `wwwroot/`). Auf Android/iOS lässt sie sich über „Installieren" bzw. „Zum Home-Bildschirm hinzufügen" wie eine App installieren und funktioniert teilweise offline.
+
+Hinweis zum Cache: Rezeptdaten (`index.json`) werden im Hintergrund aktualisiert – neue Rezepte erscheinen nach der Installation spätestens beim zweiten Öffnen. Nach großen Änderungen die Cache-Version (`cacheName`) in `wwwroot/service-worker.js` erhöhen.
+
+## QR-Code
+
+Jede Rezeptseite zeigt einen QR-Code mit dem Link zum Rezept (zum Teilen auf andere Geräte).
