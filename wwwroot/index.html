@@ -24,10 +24,11 @@
             document.head.appendChild(baseTag);
 
             // Zielpfad wiederherstellen, der von 404.html (Suchergebnis-Fallback) gemerkt wurde.
+            // pushState statt replaceState, damit der Zurück-Button zur Übersicht führt.
             var ret = sessionStorage.getItem('rezept-return');
             if (ret) {
                 sessionStorage.removeItem('rezept-return');
-                history.replaceState(null, '', base + ret);
+                history.pushState(null, '', base + ret);
             }
         })();
     </script>
