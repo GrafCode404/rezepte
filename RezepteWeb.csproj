@@ -16,4 +16,11 @@
     <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="RezepteWeb.Tests\**" />
+    <Content Remove="RezepteWeb.Tests\**" />
+    <EmbeddedResource Remove="RezepteWeb.Tests\**" />
+    <None Remove="RezepteWeb.Tests\**" />
+  </ItemGroup>
+
 </Project>

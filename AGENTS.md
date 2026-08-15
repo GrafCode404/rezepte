@@ -49,6 +49,7 @@ wwwroot/
   index.html, manifest, icons, lib/bootstrap
 Properties/launchSettings.json  Lokal auf http://localhost:5005
 Templates/Rezept-Template.md  Vorlage für neue Rezepte (wird NICHT veröffentlicht)
+RezepteWeb.Tests/           xUnit-Tests (RecipeParserTests, RecipeServiceTests)
 ```
 
 ## Konzepte, die wichtig zu verstehen sind
@@ -96,8 +97,10 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 
 - Lokal: `dotnet run` → `http://localhost:5005`
 - Build: `dotnet publish RezepteWeb.csproj -c Release -o publish`
+- **Tests**: `dotnet test RezepteWeb.Tests/RezepteWeb.Tests.csproj` (xUnit, läuft auch als CI in `.github/workflows/test.yml`)
+  - `RecipeParserTests` – reine Parsing-/Slugify-Logik
+  - `RecipeServiceTests` – Laden/Parsen/Suche über `index.json` (mit Fake-HttpHandler)
 - Deploy: `git push` auf `main` → GitHub Actions baut und veröffentlicht (kein manueller Schritt)
-- Es gibt keine Test-Suite im Repo
 
 ## Arbeitsablauf für Änderungen (wichtig)
 
