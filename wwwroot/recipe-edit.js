@@ -5,36 +5,7 @@
     var ALLOWED_USER = "GrafCode404";
     var TOKEN_KEY = "rezepte.notes.token";
     var BASE = "https://api.github.com/repos/" + REPO + "/contents/";
-
-    function toBase64(str) {
-        var bytes = new TextEncoder().encode(str);
-        var bin = "";
-        var chunk = 0x8000;
-        for (var i = 0; i < bytes.length; i += chunk) {
-            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-        }
-        return btoa(bin);
-    }
-
-    function fromBase64(b64) {
-        var bin = atob(b64);
-        var bytes = new Uint8Array(bin.length);
-        for (var i = 0; i < bin.length; i++) {
-            bytes[i] = bin.charCodeAt(i);
-        }
-        return new TextDecoder().decode(bytes);
-    }
-
-    function slugify(title) {
-        return title
-            .toLowerCase()
-            .replace(/\u00e4/g, "ae")
-            .replace(/\u00f6/g, "oe")
-            .replace(/\u00fc/g, "ue")
-            .replace(/\u00df/g, "ss")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    }
+    var Lib = globalThis.RecipeEditLib;
 
     function token() {
         return localStorage.getItem(TOKEN_KEY);
@@ -83,7 +54,7 @@
             if (r.status !== 200 || !r.body || !r.body.content) {
                 throw new Error("index.json konnte nicht geladen werden (Status " + r.status + ").");
             }
-            var text = fromBase64(r.body.content.replace(/\n/g, ""));
+            var text = Lib.fromBase64(r.body.content.replace(/\n/g, ""));
             var entries;
             try {
                 entries = JSON.parse(text);
@@ -111,7 +82,7 @@
     function putFile(path, text, sha, message) {
         var body = {
             message: message,
-            content: toBase64(text)
+            content: Lib.toBase64(text)
         };
         if (sha) {
             body.sha = sha;
@@ -147,26 +118,13 @@
                 return { ok: false, error: "Dieser Account (" + u.body.login + ") ist nicht freigegeben." };
             }
 
-            var finalName = fileName || slugify(title) + ".md";
+            var finalName = fileName || Lib.slugify(title) + ".md";
             var mdPath = "recipes/" + finalName;
             var mdMessage = fileName ? ("Update " + title) : ("Add " + title);
 
             return loadIndex().then(function (idx) {
                 return fileSha(mdPath).then(function (mdSha) {
-                    var entries = idx.entries || [];
-                    var next = [];
-                    var found = false;
-                    entries.forEach(function (e) {
-                        if (e && e.name === finalName) {
-                            next.push({ name: finalName, content: markdown });
-                            found = true;
-                        } else {
-                            next.push(e);
-                        }
-                    });
-                    if (!found) {
-                        next.push({ name: finalName, content: markdown });
-                    }
+                    var next = Lib.buildIndex(idx.entries, finalName, markdown);
                     var newIndex = JSON.stringify(next);
 
                     return putFile(mdPath, markdown, mdSha, mdMessage).then(function () {

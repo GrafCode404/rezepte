@@ -22,6 +22,21 @@ public class RecipeParserTests
         Assert.Equal("a-b-c", RecipeParser.Slugify("a!!b   c"));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("!!! --- ###")]
+    public void Slugify_leer_bei_keinen_Zeichen(string input)
+    {
+        Assert.Equal("", RecipeParser.Slugify(input));
+    }
+
+    [Fact]
+    public void Slugify_ist_kleinbuchstaben()
+    {
+        Assert.Equal("bagels", RecipeParser.Slugify("BAGELS"));
+    }
+
     [Fact]
     public void ParseTitle_nimmt_erste_H1_Zeile()
     {
@@ -36,6 +51,18 @@ public class RecipeParserTests
     }
 
     [Fact]
+    public void ParseTitle_ignoriert_untergeordnete_Überschriften()
+    {
+        Assert.Equal("fallback", RecipeParser.ParseTitle("## Level 2\n### Level 3", "fallback"));
+    }
+
+    [Fact]
+    public void ParseTitle_erkennt_nur_H1_mit_Leerzeichen()
+    {
+        Assert.Equal("fallback", RecipeParser.ParseTitle("#KeinLeerzeichen", "fallback"));
+    }
+
+    [Fact]
     public void ParseFacts_liest_Schluessel_Werte()
     {
         var md = "# T\n* **Menge:** 2 Stück\n* **Backdauer:** 30 Min\nnormaler Text";
@@ -44,6 +71,16 @@ public class RecipeParserTests
         Assert.Equal(2, facts.Count);
         Assert.Equal("2 Stück", facts["Menge"]);
         Assert.Equal("30 Min", facts["Backdauer"]);
+    }
+
+    [Fact]
+    public void ParseFacts_ignoriert_malformierte_Zeilen()
+    {
+        var md = "# T\n* **KeinDoppelpunkt**\n* normaler Text\n* **Gueltig:** 1";
+        var facts = RecipeParser.ParseFacts(md);
+
+        Assert.Single(facts);
+        Assert.Equal("1", facts["Gueltig"]);
     }
 
     [Fact]
@@ -57,6 +94,24 @@ public class RecipeParserTests
         Assert.DoesNotContain("500", ingredients);
         // Hinweis: fette Abschnitts-Überschriften ohne Menge werden aktuell mit aufgenommen.
         Assert.Contains("Hauptteig", ingredients);
+    }
+
+    [Fact]
+    public void ExtractIngredients_unterstuetzt_CRLF_Zeilenumbrueche()
+    {
+        var md = "| Zutaten | 1x |\r\n| :--- | :--- |\r\n| Mehl | 500 g |";
+        var ingredients = RecipeParser.ExtractIngredients(md);
+
+        Assert.Contains("Mehl", ingredients);
+    }
+
+    [Fact]
+    public void ExtractIngredients_stoppt_nach_der_Tabelle()
+    {
+        var md = "| Zutaten | 1x |\n| :--- | :--- |\n| Mehl | 500 g |\n\n## **Anleitungen**\n- Schritt";
+        var ingredients = RecipeParser.ExtractIngredients(md);
+
+        Assert.Equal("Mehl", ingredients);
     }
 
     [Theory]

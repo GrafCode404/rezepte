@@ -46,6 +46,12 @@ public class RecipeServiceTests
         return new RecipeService(new HttpClient(new FakeHandler(payload)));
     }
 
+    private static RecipeService CreateService(params (string Name, string Content)[] entries)
+    {
+        var payload = JsonSerializer.Serialize(entries.Select(e => new { name = e.Name, content = e.Content }));
+        return new RecipeService(new HttpClient(new FakeHandler(payload)));
+    }
+
     [Fact]
     public async Task GetRecipesAsync_parst_Rezept_vollstaendig()
     {
@@ -106,5 +112,56 @@ public class RecipeServiceTests
         service.Reset();
         var second = await service.GetRecipesAsync();
         Assert.Single(second);
+    }
+
+    [Fact]
+    public async Task GetRecipesAsync_sortiert_nach_Dateinamen()
+    {
+        var service = CreateService(
+            ("Z.md", "# Z\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Zutat | 1 |"),
+            ("A.md", "# A\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Apfel | 1 |"));
+
+        var recipes = await service.GetRecipesAsync();
+
+        Assert.Equal(2, recipes.Count);
+        Assert.Equal("A", recipes[0].Title);
+        Assert.Equal("Z", recipes[1].Title);
+    }
+
+    [Fact]
+    public async Task SearchAsync_direkte_Treffer_vor_Teilwort_Treffern()
+    {
+        var service = CreateService(
+            ("Teig.md", "# Sauerteig\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Mehl | 1 |"),
+            ("Brot.md", "# Brot mit Teig\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Teigling | 1 |"));
+
+        await service.GetRecipesAsync();
+        var hits = await service.SearchAsync("teig");
+
+        Assert.Equal(2, hits.Count);
+        Assert.Equal("Brot mit Teig", hits[0].Title);
+        Assert.Equal("Sauerteig", hits[1].Title);
+    }
+
+    [Fact]
+    public async Task SearchAsync_leere_Abfrage_liefert_alle()
+    {
+        var service = CreateService();
+        var all = await service.SearchAsync(null);
+        Assert.Single(all);
+
+        var whitespace = await service.SearchAsync("   ");
+        Assert.Single(whitespace);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_mit_Umlaut_Slug()
+    {
+        var service = CreateService(
+            ("Brot.md", "# Grillbrötchen\n\n* **Menge:** 4"));
+
+        await service.GetRecipesAsync();
+        Assert.NotNull(await service.GetBySlugAsync("grillbroetchen"));
+        Assert.Null(await service.GetBySlugAsync("grillbrötchen"));
     }
 }

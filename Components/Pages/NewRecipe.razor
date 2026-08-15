@@ -111,7 +111,7 @@
         if (result.Ok)
         {
             RecipeService.Reset();
-            NavigationManager.NavigateTo($"/rezepte/{Slugify(title)}");
+            NavigationManager.NavigateTo($"/rezepte/{RecipeParser.Slugify(title)}");
         }
         else
         {
@@ -123,33 +123,5 @@
     private void Cancel()
     {
         NavigationManager.NavigateTo("/");
-    }
-
-    private static string Slugify(string title)
-    {
-        var normalized = title
-            .ToLowerInvariant()
-            .Replace("ä", "ae")
-            .Replace("ö", "oe")
-            .Replace("ü", "ue")
-            .Replace("ß", "ss");
-
-        var slug = new System.Text.StringBuilder(normalized.Length);
-        var lastWasDash = false;
-        foreach (var c in normalized)
-        {
-            if (char.IsAsciiLetterOrDigit(c))
-            {
-                slug.Append(c);
-                lastWasDash = false;
-            }
-            else if (!lastWasDash)
-            {
-                slug.Append('-');
-                lastWasDash = true;
-            }
-        }
-
-        return slug.ToString().Trim('-');
     }
 }

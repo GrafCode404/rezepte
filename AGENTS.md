@@ -44,12 +44,14 @@ wwwroot/
   service-worker.js          PWA-Caching (Stale-while-Revalidate + Netzwerk-first für Navigation)
   pwa-update.js              Update-Banner, erzwingt Reload bei neuer SW
   recipe-notes.js            Anmerkungs-Widget über GitHub-Issues-API
+  recipe-edit-lib.js         Pure Editor-Helfer (slugify, base64, buildIndex) – auch per Node testbar
   recipe-edit.js             Rezept-Editor über GitHub-Contents-API (RecipeEdit.save / isLoggedIn)
   share.js                   "Link kopieren"-Hilfsfunktion
   index.html, manifest, icons, lib/bootstrap
 Properties/launchSettings.json  Lokal auf http://localhost:5005
 Templates/Rezept-Template.md  Vorlage für neue Rezepte (wird NICHT veröffentlicht)
 RezepteWeb.Tests/           xUnit-Tests (RecipeParserTests, RecipeServiceTests)
+tests/                      Node-Tests für recipe-edit-lib.js
 ```
 
 ## Konzepte, die wichtig zu verstehen sind
@@ -100,6 +102,8 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 - **Tests**: `dotnet test RezepteWeb.Tests/RezepteWeb.Tests.csproj` (xUnit, läuft auch als CI in `.github/workflows/test.yml`)
   - `RecipeParserTests` – reine Parsing-/Slugify-Logik
   - `RecipeServiceTests` – Laden/Parsen/Suche über `index.json` (mit Fake-HttpHandler)
+- **JS-Tests**: `node --test tests/*.test.js` (Node-Test-Runner, ohne Abhängigkeiten)
+  - testet `wwwroot/recipe-edit-lib.js` (slugify, base64, buildIndex) – die pure Editor-Logik
 - Deploy: `git push` auf `main` → GitHub Actions baut und veröffentlicht (kein manueller Schritt)
 
 ## Arbeitsablauf für Änderungen (wichtig)

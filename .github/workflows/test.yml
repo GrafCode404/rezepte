@@ -18,5 +18,8 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Run tests
+      - name: Run .NET tests
         run: dotnet test RezepteWeb.Tests/RezepteWeb.Tests.csproj
+
+      - name: Run JS tests
+        run: node --test tests/*.test.js
