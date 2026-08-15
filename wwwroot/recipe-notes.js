@@ -2,7 +2,7 @@
     "use strict";
 
     var ALLOWED_USER = "GrafCode404";
-    var REPO = "GrafCode404/rezepte";
+    var REPO = "GrafCode404/rezepte-content";
     var LABEL = "anmerkung";
     var TOKEN_KEY = "rezepte.notes.token";
 
@@ -347,7 +347,7 @@
         }
         var intro = make("p", "notes-hint",
             "Token anlegen: GitHub → Settings → Developer settings → Personal access tokens → " +
-            "Fine-grained (Repo „rezepte“: Issues Read+Write; Repo „rezepte-content“: Contents Read+Write).");
+            "Fine-grained (Repo „rezepte-content“: Issues Read+Write und Contents Read+Write).");
         var input = document.createElement("input");
         input.type = "password";
         input.className = "form-control";

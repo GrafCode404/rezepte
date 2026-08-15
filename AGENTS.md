@@ -75,8 +75,8 @@ Jedes Rezept ist eine `*.md`-Datei in `recipes/` im **Content-Repo** (`GrafCode4
 
 ### Anmerkungen = GitHub Issues (wwwroot/recipe-notes.js)
 Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein Backend):
-- `REPO = "GrafCode404/rezepte"`, `ALLOWED_USER = "GrafCode404"`, `LABEL = "anmerkung"`
-- Token (feingranular, nur Repo, Issues Read+Write) wird im `localStorage` gespeichert (Key `rezepte.notes.token`)
+- `REPO = "GrafCode404/rezepte-content"`, `ALLOWED_USER = "GrafCode404"`, `LABEL = "anmerkung"`
+- Token (feingranular, Repo `rezepte-content`, Issues + Contents Read+Write) wird im `localStorage` gespeichert (Key `rezepte.notes.token`)
 - Anmerkungen sind offene Issues mit Label `anmerkung`; der Rezept-Slug steckt im Issue-Body als `<!-- slug=... -->`
 - Nur `ALLOWED_USER` darf schreiben/löschen; andere sehen nur die Liste
 - Beim Umbenennen eines Accounts müssen `REPO` und `ALLOWED_USER` mit umbenannt werden, sonst bricht POST/Löschen wegen Authorization-Verlust beim 301-Redirect
@@ -84,7 +84,7 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 ### Rezept-Editor = GitHub Contents API (wwwroot/recipe-edit.js)
 - `REPO = "GrafCode404/rezepte-content"`, `ALLOWED_USER = "GrafCode404"`
 - Nutzt **denselben Token** wie die Anmerkungen (`localStorage`-Key `rezepte.notes.token`)
-- Token-Berechtigungen: `contents: read+write` (Content-Repo) + `issues: read+write` (App-Repo)
+- Token-Berechtigungen: `contents: read+write` + `issues: read+write` (beide auf `rezepte-content`)
 - `RecipeEdit.save({fileName, markdown, title})`: schreibt `.md` + regeneriert `index.json` (beides über Contents API, `sha`-Konfliktprüfung mit einem Retry)
 - `RecipeEdit.isLoggedIn()`: prüft Token + User (für bedingte UI wie den Bearbeiten-Button)
 - `fileName = null` bei neuem Rezept → Dateiname wird aus dem Titel via Slugify erzeugt
