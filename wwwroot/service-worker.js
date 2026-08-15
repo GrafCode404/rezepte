@@ -1,8 +1,9 @@
-// build 2026-08-15.11
-const cacheName = "rezepte-v5";
+// build 2026-08-15.12
+const cacheName = "rezepte-v6";
 
 // App-Start-Seite für den Offline-Fallback vorcachen.
 self.addEventListener("install", (event) => {
+    self.skipWaiting();
     event.waitUntil(caches.open(cacheName).then((cache) => cache.add(self.registration.scope)));
 });
 
@@ -34,37 +35,19 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // Seiten-Navigation: Netzwerk zuerst (frische Rezepte), Cache als Fallback.
-    if (request.mode === "navigate") {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    if (response.ok) {
-                        const copy = response.clone();
-                        caches.open(cacheName).then((cache) => cache.put(request, copy));
-                    }
-                    return response;
-                })
-                .catch(() =>
-                    caches.match(request).then((m) => m || caches.match(self.registration.scope))
-                )
-        );
-        return;
-    }
-
-    // Statische Dateien: Cache zuerst, im Hintergrund aktualisieren (stale-while-revalidate).
+    // Netzwerk zuerst, Cache nur als Offline-Fallback.
+    // So erscheinen Änderungen sofort und der App-Stand kann nicht mehr "hängenbleiben".
     event.respondWith(
-        caches.match(request).then((cached) => {
-            const network = fetch(request)
-                .then((response) => {
-                    if (response.ok) {
-                        const copy = response.clone();
-                        caches.open(cacheName).then((cache) => cache.put(request, copy));
-                    }
-                    return response;
-                })
-                .catch(() => undefined);
-            return cached || network;
-        })
+        fetch(request)
+            .then((response) => {
+                if (response.ok) {
+                    const copy = response.clone();
+                    caches.open(cacheName).then((cache) => cache.put(request, copy));
+                }
+                return response;
+            })
+            .catch(() =>
+                caches.match(request).then((m) => m || caches.match(self.registration.scope))
+            )
     );
 });
