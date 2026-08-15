@@ -176,13 +176,15 @@ Aktuell baut `BuildRecipesIndex` beim Build `index.json` aus allen `.md`. Damit 
 - **B) Live-Lesen über Content API:** Die App holt Rezept-Markdown direkt per Content API (mit Cache), `index.json` nur als Offline-Fallback. Edits sofort live, aber mehr API-Aufrufe + Token nötig zum Lesen (privates Repo).
   - **Lösung für öffentliches Lesen:** Repo public machen → Content API ohne Token für Lesezugriff. Schreiben weiter nur mit Token.
 
-**Empfehlung: Repo public + Option B** (Live-Lesen für sofortige Sichtbarkeit, `index.json` als Offline-Fallback, Schreiben per Token). Muss in Phase 1 final entschieden werden.
+**Empfehlung: Option B** (Live-Lesen für sofortige Sichtbarkeit, `index.json` als Offline-Fallback, Schreiben per Token).
+
+> Hinweis: Das Repo `GrafCode404/rezepte` ist **bereits public** (Stand 2026-08-15). Öffentliches Lesen über die Content API ist damit ohne Token möglich; Schreiben bleibt token-geschützt. Muss in Phase 1 final entschieden werden.
 
 ---
 
 ## 7. Offene Entscheidungen (vor/nach Phase 1)
 
-1. **Repo public oder private?** Für öffentliches Lesen ohne Token: public. (Empfehlung: public, da Lesen ohnehin ohne Login soll.)
+1. ~~Repo public oder private?~~ **Bereits public** – öffentliches Lesen ohne Token ist möglich. (Schreiben weiterhin nur mit Token.)
 2. **Live-Lesen (B) vs. Deploy-Trigger (A)** – betrifft wie schnell Edits sichtbar sind.
 3. **Frontmatter einführen** sofort oder erst in Phase 4 (beeinflusst Parser).
 4. **Mehrbenutzer-Support** relevant? PAT-Modell ist nur für Einzelbesitzer gedacht; für mehrere Benutzer wäre GitHub-OAuth/Backend nötig.
