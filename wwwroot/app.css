@@ -406,3 +406,34 @@ h1:focus {
     width: 280px;
     height: 280px;
 }
+
+.recipe-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .recipe-editor {
+        grid-template-columns: 1fr;
+    }
+}
+
+.recipe-editor-textarea {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .875rem;
+    min-height: 32rem;
+    line-height: 1.5;
+}
+
+.recipe-editor-preview {
+    margin-top: 0;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    padding: 1rem;
+    min-height: 32rem;
+    background: #fff;
+    overflow: auto;
+}
+

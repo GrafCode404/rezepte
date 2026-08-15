@@ -7,16 +7,27 @@ Anweisungen für KI-Agenten, die in diesem Repository (RezepteWeb) Änderungen v
 Persönliche Rezeptsammlung als **Blazor-WebAssembly-App** (.NET 10), die als **Progressive Web App (PWA)** über **GitHub Pages** ausgeliefert wird.
 
 - Live: `https://grafcode404.github.io/rezepte/`
-- GitHub-Repo: `GrafCode404/rezepte` (ehemals `Jigby/rezepte` – Account umbenannt, alte URL leitet per 301 weiter)
+- **App-Repo**: `GrafCode404/rezepte` (diese Datei liegt hier)
+- **Content-Repo**: `GrafCode404/rezepte-content` – enthält die Rezepte als Markdown (`recipes/*.md`) + generiertes `recipes/index.json`
 - Deploy: automatisch per GitHub Actions bei jedem `push` auf `main` (`.github/workflows/deploy.yml`)
+
+### Wichtige Architektur-Trennung (seit 2026-08)
+
+Rezept-Daten liegen **nicht mehr** im App-Repo. Sie sind in ein separates Content-Repo ausgelagert:
+
+- Die App liest Rezepte zur Laufzeit von `https://raw.githubusercontent.com/GrafCode404/rezepte-content/main/recipes/index.json`
+- Rezept-Änderungen (Anlegen/Bearbeiten) gehen über die **GitHub Contents API** direkt ins Content-Repo – **ohne Rebuild** der App
+- `recipes/index.json` im Content-Repo wird beim Speichern (Editor) und zusätzlich per Workflow (`regenerate-index.yml`) regeneriert
+- Der frühere MSBuild-Task `BuildRecipesIndex` ist entfernt
 
 ## Architektur / Aufbau
 
 ```
 Program.cs                  Einstieg, DI-Registrierung (HttpClient, RecipeService)
-RezepteWeb.csproj           SDK BlazorWebAssembly, net10.0; MSBuild-Task erzeugt recipes/index.json beim Build
-Models/Recipe.cs            Datenmodell (Title, Slug, FileName, Html, Ingredients, Facts)
-Services/RecipeService.cs   Lädt Rezepte aus index.json, parst Markdown (Markdig), Slugify, Volltextsuche
+RezepteWeb.csproj           SDK BlazorWebAssembly, net10.0
+Models/Recipe.cs            Datenmodell (Title, Slug, FileName, Markdown, Html, Ingredients, Facts)
+Models/EditResult.cs        Ergebnis des Editors (RecipeEdit.save)
+Services/RecipeService.cs   Lädt Rezepte aus dem Content-Repo (CDN), parst Markdown (Markdig), Slugify, Volltextsuche
 Components/
   App.razor / Routes.razor  Router-Setup
   Layout/                   MainLayout, NavMenu (+ CSS)
@@ -25,29 +36,32 @@ Components/
     Uebersicht.razor        Offene Anmerkungen über GitHub Issues (Route "/uebersicht")
     Login.razor             GitHub-Token-Eingabe (Route "/zugang")
     Notizen.razor           Allgemeine Anmerkungen (Route "/notizen")
-    RecipeDetail.razor      Rezeptdetail, Teilen, QR-Code (Route "/rezepte/{Slug}", "/{Slug}")
+    RecipeDetail.razor      Rezeptdetail, Teilen, QR-Code, Bearbeiten-Button (Route "/rezepte/{Slug}", "/{Slug}")
+    EditRecipe.razor        Rezept bearbeiten (Route "/rezepte/{Slug}/edit", "/{Slug}/edit")
+    NewRecipe.razor         Neues Rezept anlegen (Route "/neu")
     NotFound.razor          404 (Route "/not-found")
 wwwroot/
-  recipes/*.md               Rezepte als Markdown (Quelle der Daten)
   service-worker.js          PWA-Caching (Stale-while-Revalidate + Netzwerk-first für Navigation)
   pwa-update.js              Update-Banner, erzwingt Reload bei neuer SW
   recipe-notes.js            Anmerkungs-Widget über GitHub-Issues-API
+  recipe-edit.js             Rezept-Editor über GitHub-Contents-API (RecipeEdit.save / isLoggedIn)
   share.js                   "Link kopieren"-Hilfsfunktion
   index.html, manifest, icons, lib/bootstrap
 Properties/launchSettings.json  Lokal auf http://localhost:5005
+Templates/Rezept-Template.md  Vorlage für neue Rezepte (wird NICHT veröffentlicht)
 ```
 
 ## Konzepte, die wichtig zu verstehen sind
 
-### Rezepte = Markdown-Dateien
-Jedes Rezept ist eine `*.md`-Datei in `wwwroot/recipes/`. Kein Datenbank-/CMS-System. Einheitliches Format:
+### Rezepte = Markdown-Dateien (im Content-Repo)
+Jedes Rezept ist eine `*.md`-Datei in `recipes/` im **Content-Repo** (`GrafCode404/rezepte-content`). Kein Datenbank-/CMS-System. Einheitliches Format:
 - Zeile 1: Titel als `# Überschrift`
 - Danach Fakten als Bullets `* **Schlüssel:** Wert` (Menge, Zeiten, Temperatur …)
 - Zutaten-Tabelle mit Spalten `1x / 2x / 3x` (erste Spalte Zutatenname)
 - `## Anleitungen` mit `### Unterüberschriften`
 - PDF-Umbruch-Marker `<div class="page"/>` wird beim Rendern ignoriert
 
-Beim Build wird `wwwroot/recipes/index.json` per MSBuild-Task (`BuildRecipesIndex`) automatisch aus allen `.md`-Dateien erzeugt. **Diese Datei ist in `.gitignore` ausgeklammert und wird nie committet** – nur die `.md`-Quellen werden versioniert.
+`recipes/index.json` im Content-Repo wird automatisch erzeugt (vom Editor beim Speichern und per Workflow `regenerate-index.yml`). Format: `[{"name":"...","content":"..."}]` (kompaktes JSON, keine Leerzeichen).
 
 ### Parsing-Logik (Services/RecipeService.cs)
 - `ParseTitle`: erste Zeile mit `# `
@@ -64,6 +78,14 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 - Nur `ALLOWED_USER` darf schreiben/löschen; andere sehen nur die Liste
 - Beim Umbenennen eines Accounts müssen `REPO` und `ALLOWED_USER` mit umbenannt werden, sonst bricht POST/Löschen wegen Authorization-Verlust beim 301-Redirect
 
+### Rezept-Editor = GitHub Contents API (wwwroot/recipe-edit.js)
+- `REPO = "GrafCode404/rezepte-content"`, `ALLOWED_USER = "GrafCode404"`
+- Nutzt **denselben Token** wie die Anmerkungen (`localStorage`-Key `rezepte.notes.token`)
+- Token-Berechtigungen: `contents: read+write` (Content-Repo) + `issues: read+write` (App-Repo)
+- `RecipeEdit.save({fileName, markdown, title})`: schreibt `.md` + regeneriert `index.json` (beides über Contents API, `sha`-Konfliktprüfung mit einem Retry)
+- `RecipeEdit.isLoggedIn()`: prüft Token + User (für bedingte UI wie den Bearbeiten-Button)
+- `fileName = null` bei neuem Rezept → Dateiname wird aus dem Titel via Slugify erzeugt
+
 ### PWA / Service Worker
 - `service-worker.js`: Navigation = Netzwerk-first mit Cache-Fallback; statische Dateien = stale-while-revalidate
 - `cacheName` (aktuell `rezepte-v4`) wird bei größeren Änderungen **manuell erhöht**, damit alte Cache-Inhalte auf Clients verworfen werden (siehe `.gitignore`-Hinweis nicht nötig, aber bewusstes Vorgehen)
@@ -79,9 +101,9 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 
 ## Arbeitsablauf für Änderungen (wichtig)
 
-1. **Immer zuerst `git pull --rebase`** vor `git push` – der Remote kann durch direkte Edits über die GitHub-Weboberfläche (Rezept-Updates) oder eigene Pushes neue Commits haben. Bei Divergenz rebasen statt mergen, um die Historie linear zu halten.
+1. **Immer zuerst `git pull --rebase`** vor `git push` – der Remote kann durch direkte Edits über die GitHub-Weboberfläche oder eigene Pushes neue Commits haben. Bei Divergenz rebasen statt mergen, um die Historie linear zu halten.
 2. Nach dem Push kurz den GitHub-Actions-Workflow im Auge behalten (`gh run watch`/`gh run list`), der Deploy läuft nicht sofort.
-3. Neue Rezepte: nur `wwwroot/recipes/*.md` anlegen; `index.json` NICHT committen (wird beim Build erzeugt).
+3. **Neue Rezepte anlegen**: entweder über die Webseite (`/neu`) oder direkt als `recipes/*.md` im **Content-Repo** (`rezepte-content`). `recipes/index.json` NICHT manuell im Content-Repo editieren – wird automatisch erzeugt.
 
 ## Sonstige Hinweise aus der bisherigen Entwicklung
 

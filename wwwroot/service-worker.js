@@ -1,5 +1,5 @@
-// build 2026-08-08.10
-const cacheName = "rezepte-v4";
+// build 2026-08-15.11
+const cacheName = "rezepte-v5";
 
 // App-Start-Seite für den Offline-Fallback vorcachen.
 self.addEventListener("install", (event) => {

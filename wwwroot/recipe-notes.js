@@ -347,7 +347,7 @@
         }
         var intro = make("p", "notes-hint",
             "Token anlegen: GitHub → Settings → Developer settings → Personal access tokens → " +
-            "Fine-grained (nur Repo „rezepte\", Permission „Issues: Read and write\").");
+            "Fine-grained (Repo „rezepte“: Issues Read+Write; Repo „rezepte-content“: Contents Read+Write).");
         var input = document.createElement("input");
         input.type = "password";
         input.className = "form-control";
@@ -481,7 +481,7 @@
         container.appendChild(list);
 
         Promise.all([
-            fetch("recipes/index.json").then(function (r) {
+            fetch("https://raw.githubusercontent.com/GrafCode404/rezepte-content/main/recipes/index.json").then(function (r) {
                 return r.ok ? r.json() : [];
             }).then(function (entries) {
                 var map = {};

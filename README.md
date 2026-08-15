@@ -1,17 +1,21 @@
 # Rezepte
 
-Persönliche Rezeptsammlung als Blazor-WebAssembly-App. Laufend über GitHub Pages unter <https://jigby.github.io/rezepte/>.
+Persönliche Rezeptsammlung als Blazor-WebAssembly-App. Laufend über GitHub Pages unter <https://grafcode404.github.io/rezepte/>.
 
-## Rezepte hinzufügen
+## Rezepte verwalten
 
-Ein neues Rezept ist eine neue `*.md`-Datei im Ordner `wwwroot/recipes/`. Einheitliches Format:
+Die Rezepte liegen als Markdown-Dateien im separaten Repo [`GrafCode404/rezepte-content`](https://github.com/GrafCode404/rezepte-content). Sie werden zur Laufzeit von dort geladen – Rezept-Änderungen erfordern keinen Rebuild der App.
+
+Neue Rezepte lassen sich direkt auf der Webseite anlegen (`/neu`) und bearbeiten. Zum Speichern ist ein GitHub-Login über `Zugang` nötig.
+
+Rezept-Format:
 
 - Erste Zeile: Titel als `# Überschrift`
 - Danach Fakten als Bullets `* **Schlüssel:** Wert` (Menge, Zeiten, Temperatur …)
 - Zutaten-Tabelle mit Spalten `1x / 2x / 3x`
 - `## Anleitungen` mit Abschnitten als `### Unterüberschriften`
 
-Titel und Fakten werden automatisch geparst; PDF-Umbruch-Marker (`<div class="page"/>`) werden beim Rendern ignoriert. Beim Build wird `wwwroot/recipes/index.json` automatisch erzeugt (im Repo ausgeklammert).
+Titel und Fakten werden automatisch geparst; PDF-Umbruch-Marker (`<div class="page"/>`) werden beim Rendern ignoriert. `index.json` im Content-Repo wird beim Speichern und per Workflow automatisch erzeugt.
 
 ## Veröffentlichen
 
@@ -33,7 +37,7 @@ Volltextsuche über Titel und Inhalt aller Rezepte über das Suchfeld auf der St
 
 Die Seite ist eine Progressive Web App (Manifest + Service Worker in `wwwroot/`). Auf Android/iOS lässt sie sich über „Installieren" bzw. „Zum Home-Bildschirm hinzufügen" wie eine App installieren und funktioniert teilweise offline.
 
-Hinweis zum Cache: Rezeptdaten (`index.json`) werden im Hintergrund aktualisiert – neue Rezepte erscheinen nach der Installation spätestens beim zweiten Öffnen. Wenn eine neue App-Version bereitsteht, erscheint unten ein Banner mit „Aktualisieren" – der Klick aktiviert die neue Version und startet die App neu. Die Cache-Version (`cacheName`) in `wwwroot/service-worker.js` wird bei großen Änderungen erhöht, damit alte Cache-Inhalte verworfen werden.
+Hinweis zum Cache: Wenn eine neue App-Version bereitsteht, erscheint unten ein Banner mit „Aktualisieren" – der Klick aktiviert die neue Version und startet die App neu. Die Cache-Version (`cacheName`) in `wwwroot/service-worker.js` wird bei großen Änderungen erhöht, damit alte Cache-Inhalte verworfen werden.
 
 ## QR-Code
 

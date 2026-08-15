@@ -8,6 +8,9 @@ namespace RezepteWeb.Services;
 
 public class RecipeService
 {
+    public const string RecipesIndexUrl =
+        "https://raw.githubusercontent.com/GrafCode404/rezepte-content/main/recipes/index.json";
+
     private readonly HttpClient _http;
     private readonly List<Recipe> _recipes = [];
     private Task? _loadTask;
@@ -21,6 +24,12 @@ public class RecipeService
         => new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     public Task EnsureLoadedAsync() => _loadTask ??= LoadAsync();
+
+    public void Reset()
+    {
+        _recipes.Clear();
+        _loadTask = null;
+    }
 
     public async Task<List<Recipe>> GetRecipesAsync()
     {
@@ -90,7 +99,8 @@ public class RecipeService
 
     private async Task LoadAsync()
     {
-        var entries = await _http.GetFromJsonAsync<RecipeEntry[]>("recipes/index.json") ?? [];
+        var url = RecipesIndexUrl + "?v=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var entries = await _http.GetFromJsonAsync<RecipeEntry[]>(url) ?? [];
         var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
         foreach (var entry in entries.OrderBy(e => e.Name))
@@ -104,6 +114,7 @@ public class RecipeService
                 Title = title,
                 Slug = Slugify(title),
                 FileName = entry.Name,
+                Markdown = entry.Content,
                 Html = Markdown.ToHtml(RemoveHeaderBlock(cleaned, title), pipeline),
                 Ingredients = ExtractIngredients(cleaned),
                 Facts = facts,

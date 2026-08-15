@@ -2,4 +2,3 @@ bin/
 obj/
 .DS_Store
 *.user
-wwwroot/recipes/index.json

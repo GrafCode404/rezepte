@@ -1,0 +1,119 @@
+@page "/rezepte/{Slug}/edit"
+@page "/{Slug}/edit"
+@using Markdig
+@using RezepteWeb.Models
+@using RezepteWeb.Services
+@inject RecipeService RecipeService
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Rezept bearbeiten – Rezepte</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <a href="./.." class="breadcrumb-link text-muted">&larr; Zurück zum Rezept</a>
+</nav>
+
+@if (notFound)
+{
+    <h1>Rezept nicht gefunden</h1>
+    <p class="text-muted">Das gesuchte Rezept existiert nicht.</p>
+    <a href="./" class="btn btn-primary">Zur Übersicht</a>
+}
+else if (recipe is not null)
+{
+    <h1>Rezept bearbeiten</h1>
+    <p class="text-muted">Datei: @recipe.FileName</p>
+
+    <div class="recipe-editor">
+        <div class="recipe-editor-pane">
+            <label class="form-label" for="editor-markdown">Markdown</label>
+            <textarea id="editor-markdown" class="form-control recipe-editor-textarea"
+                      @bind="markdown" @bind:event="oninput"></textarea>
+        </div>
+        <div class="recipe-editor-pane">
+            <label class="form-label">Vorschau</label>
+            <div class="recipe-content recipe-editor-preview">
+                @((MarkupString)Preview)
+            </div>
+        </div>
+    </div>
+
+    <div class="recipe-editor-actions mt-3">
+        <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
+            @(saving ? "Speichert …" : "Speichern")
+        </button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
+    </div>
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger mt-3">@error</div>
+    }
+}
+
+@code {
+    [Parameter]
+    public string? Slug { get; set; }
+
+    private Recipe? recipe;
+    private string markdown = "";
+    private string? error;
+    private bool saving;
+    private bool notFound;
+
+    private string Preview =>
+        Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase),
+            RecipeService.CreatePipeline());
+
+    protected override async Task OnParametersSetAsync()
+    {
+        recipe = await RecipeService.GetBySlugAsync(Slug ?? string.Empty);
+        if (recipe is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        markdown = recipe.Markdown;
+    }
+
+    private static string ExtractTitle(string md)
+    {
+        var line = md.Split('\n').FirstOrDefault(l => l.TrimStart().StartsWith("# "));
+        return line is null ? "Rezept" : line.TrimStart()[2..].Trim();
+    }
+
+    private async Task Save()
+    {
+        if (saving)
+        {
+            return;
+        }
+
+        saving = true;
+        error = null;
+
+        var result = await JS.InvokeAsync<EditResult>("RecipeEdit.save", new
+        {
+            fileName = recipe!.FileName,
+            markdown = markdown,
+            title = ExtractTitle(markdown)
+        });
+
+        if (result.Ok)
+        {
+            RecipeService.Reset();
+            NavigationManager.NavigateTo($"/rezepte/{recipe!.Slug}");
+        }
+        else
+        {
+            error = result.Error ?? "Speichern fehlgeschlagen.";
+            saving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo($"/rezepte/{recipe!.Slug}");
+    }
+}
