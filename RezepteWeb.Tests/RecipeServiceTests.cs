@@ -28,15 +28,78 @@ public class RecipeServiceTests
     private sealed class FakeHandler : HttpMessageHandler
     {
         private readonly string _json;
+        private readonly string _contentType;
 
-        public FakeHandler(string json) => _json = json;
+        public FakeHandler(string json, string contentType = "application/json")
+        {
+            _json = json;
+            _contentType = contentType;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
+                Content = new StringContent(_json, Encoding.UTF8, _contentType)
+            });
+        }
+    }
+
+    [Fact]
+    public async Task GetRecipesAsync_funktioniert_bei_text_plain_ContentType()
+    {
+        var payload = JsonSerializer.Serialize(new[] { new { name = "Hefezopf.md", content = SampleMarkdown } });
+        var service = new RecipeService(new HttpClient(new FakeHandler(payload, "text/plain")));
+
+        var recipes = await service.GetRecipesAsync();
+        Assert.Single(recipes);
+    }
+
+    private sealed class FallbackHandler : HttpMessageHandler
+    {
+        private readonly string _json;
+
+        public FallbackHandler(string json) => _json = json;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.RequestUri!.Host.Contains("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new HttpRequestException("simulierter Netzwerkfehler");
+            }
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
                 Content = new StringContent(_json, Encoding.UTF8, "application/json")
             });
+        }
+    }
+
+    [Fact]
+    public async Task GetRecipesAsync_faellt_auf_jsdelivr_zurueck()
+    {
+        var payload = JsonSerializer.Serialize(new[] { new { name = "Hefezopf.md", content = SampleMarkdown } });
+        var service = new RecipeService(new HttpClient(new FallbackHandler(payload)));
+
+        var recipes = await service.GetRecipesAsync();
+
+        Assert.Single(recipes);
+        Assert.Equal("Hefezopf (Osterzopf)", recipes[0].Title);
+    }
+
+    [Fact]
+    public async Task GetRecipesAsync_bei_totalem_Netzwerkfehler_liefert_leere_Liste()
+    {
+        var service = new RecipeService(new HttpClient(new AlwaysThrowingHandler()));
+
+        var recipes = await service.GetRecipesAsync();
+        Assert.Empty(recipes);
+    }
+
+    private sealed class AlwaysThrowingHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            throw new HttpRequestException("Netzwerk weg");
         }
     }
 

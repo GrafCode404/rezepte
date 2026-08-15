@@ -76,8 +76,12 @@ public class RecipeService
 
     private async Task LoadAsync()
     {
-        var url = RecipesIndexUrl + "?v=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var entries = await _http.GetFromJsonAsync<RecipeEntry[]>(url) ?? [];
+        var entries = await FetchEntriesAsync();
+        if (entries is null)
+        {
+            return;
+        }
+
         var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
         foreach (var entry in entries.OrderBy(e => e.Name))
@@ -97,6 +101,30 @@ public class RecipeService
                 Facts = facts,
             });
         }
+    }
+
+    private async Task<RecipeEntry[]?> FetchEntriesAsync()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string[] urls =
+        [
+            RecipesIndexUrl + "?v=" + timestamp,
+            "https://cdn.jsdelivr.net/gh/GrafCode404/rezepte-content@main/recipes/index.json",
+        ];
+
+        foreach (var url in urls)
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<RecipeEntry[]>(url);
+            }
+            catch (Exception)
+            {
+                // nächste Quelle versuchen
+            }
+        }
+
+        return null;
     }
 
     private class RecipeEntry
