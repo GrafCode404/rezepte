@@ -153,6 +153,26 @@ Kein echtes Löschen der Datei (das würde Git-Historie nur über Commits behalt
 - [ ] **Anzeige-seitig (Variante B):** Im Rezept (`RecipeDetail`) einen Skalierungs-Regler/Faktor (z. B. 0,5x / 1x / 2x / 2,5x), der die Zutatenmengen in der Tabelle live umrechnet – ohne das Rezept zu verändern.
 - [ ] Parser-Erweiterung: Zutaten-Mengen parsen und als skalierbare Einheit (Menge + Einheit) bereitstellen.
 
+### Phase 7 – Skalierung: Metadaten-Index + Lazy-Load
+
+**Ziel:** Auch bei vielen Rezepten (200+) schnellen Start und schlanke Daten.
+
+- [ ] `index.json` auf **Metadaten** reduzieren (Titel, Slug, Dateiname, Fakten, Zutaten, Kategorie, Tags, …) statt Vollinhalt.
+- [ ] Workflow (`generate_index.py`) extrahiert die Metadaten aus Frontmatter/Markdown statt den Vollinhalt zu speichern.
+- [ ] Volles Markdown **lazy laden**: `RecipeDetail` holt die einzelne `.md` vom CDN (raw/jsDelivr) und rendert sie on demand.
+- [ ] `RecipeService` hält nur Metadaten im Speicher; Markdown→HTML-Rendering nur noch für das aktuell angezeigte Rezept.
+
+### Phase 8 – Erweiterte Filter & Suche
+
+**Ziel:** Filterbare Suche über erweiterte Metadaten.
+
+- [ ] Frontmatter-Felder definieren (Kategorie, Tags, Zubereitungszeit, Backtemperatur, Portionen, vegetarisch/vegan, …).
+- [ ] Filter-UI auf `Home.razor` (Kategorie, Tags, Zeiten, …) – kombinierbar mit der Volltextsuche.
+- [ ] `RecipeService.SearchAsync` / Filterlogik um die neuen Felder erweitern.
+- [ ] Optional: Fuzzy-/Relevanzsuche client-seitig über Lunr.js / FlexSearch / Fuse.js.
+
+> **Hinweis – Kein Backend nötig:** Alle Filter und Suchen laufen client-seitig über den Metadaten-Index. Das skaliert auf tausende Rezepte. Ein Backend lohnt sich erst bei Mehrbenutzer-Echtzeit-Kollaboration oder 100k+ Rezepten – für diese persönliche Sammlung bleibt es bei Markdown + Git (statisch, kostenlos, portabel).
+
 ---
 
 ## 6. Technische Umsetzungshinweise
