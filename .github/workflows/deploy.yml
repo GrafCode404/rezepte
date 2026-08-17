@@ -27,7 +27,10 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Publish
-        run: dotnet publish RezepteWeb.csproj -c Release -o publish
+        run: |
+          VERSION=$(git rev-parse --short HEAD)
+          echo "Deploying version $VERSION"
+          dotnet publish RezepteWeb.csproj -c Release -o publish -p:InformationalVersion=$VERSION
 
       - name: Upload Pages-Artefakt
         uses: actions/upload-pages-artifact@v3
