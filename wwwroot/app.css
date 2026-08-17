@@ -423,8 +423,9 @@ h1:focus {
 .recipe-editor-textarea {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: .875rem;
-    min-height: 32rem;
+    min-height: 65vh;
     line-height: 1.5;
+    resize: vertical;
 }
 
 .recipe-editor-preview {
@@ -432,7 +433,7 @@ h1:focus {
     border: 1px solid #dee2e6;
     border-radius: .375rem;
     padding: 1rem;
-    min-height: 32rem;
+    min-height: 65vh;
     background: #fff;
     overflow: auto;
 }

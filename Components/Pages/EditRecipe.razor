@@ -24,6 +24,18 @@ else if (recipe is not null)
     <h1>Rezept bearbeiten</h1>
     <p class="text-muted">Datei: @recipe.FileName</p>
 
+    <div class="recipe-editor-actions mb-3">
+        <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
+            @(saving ? "Speichert …" : "Speichern")
+        </button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
+    </div>
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
     <div class="recipe-editor">
         <div class="recipe-editor-pane">
             <label class="form-label" for="editor-markdown">Markdown</label>
@@ -37,18 +49,6 @@ else if (recipe is not null)
             </div>
         </div>
     </div>
-
-    <div class="recipe-editor-actions mt-3">
-        <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
-            @(saving ? "Speichert …" : "Speichern")
-        </button>
-        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
-    </div>
-
-    @if (error is not null)
-    {
-        <div class="alert alert-danger mt-3">@error</div>
-    }
 }
 
 @code {

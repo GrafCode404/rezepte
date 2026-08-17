@@ -16,6 +16,18 @@
 
 <p class="text-muted">Zum Speichern ist ein Login über <a href="zugang">Zugang</a> nötig.</p>
 
+<div class="recipe-editor-actions mb-3">
+    <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
+        @(saving ? "Speichert …" : "Speichern")
+    </button>
+    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
+</div>
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
 <div class="recipe-editor">
     <div class="recipe-editor-pane">
         <label class="form-label" for="editor-markdown">Markdown</label>
@@ -29,18 +41,6 @@
         </div>
     </div>
 </div>
-
-<div class="recipe-editor-actions mt-3">
-    <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
-        @(saving ? "Speichert …" : "Speichern")
-    </button>
-    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
-</div>
-
-@if (error is not null)
-{
-    <div class="alert alert-danger mt-3">@error</div>
-}
 
 @code {
     private string markdown = Template;
