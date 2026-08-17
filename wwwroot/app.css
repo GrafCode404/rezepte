@@ -411,7 +411,7 @@ h1:focus {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 @media (max-width: 768px) {
@@ -420,12 +420,18 @@ h1:focus {
     }
 }
 
+.recipe-editor-pane {
+    display: flex;
+    flex-direction: column;
+}
+
 .recipe-editor-textarea {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: .875rem;
     min-height: 65vh;
     line-height: 1.5;
-    resize: vertical;
+    flex: 1;
+    resize: none;
 }
 
 .recipe-editor-preview {
@@ -436,5 +442,6 @@ h1:focus {
     min-height: 65vh;
     background: #fff;
     overflow: auto;
+    flex: 1;
 }
 
