@@ -117,3 +117,12 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 - QR-Code-Teilung je Rezeptseite über `Net.Codecrete.QrCodeGenerator`
 - `gh`-CLI kann noch den alten Accountnamen anzeigen; funktioniert aber, gelegentlich `gh auth login` auffrischen
 - PWA auf mobilen Geräten ist an die Origin gebunden: Nach einem Domain-Wechsel neu anmelden (Token erneut eintragen) und ggf. App neu installieren
+
+## WICHTIG: GitHub-Pages-Base-Path – keine Links auf die Root
+
+Die App läuft unter `https://grafcode404.github.io/rezepte/` (Sub-Pfad, NICHT auf der Domain-Root). Der `<base href>` in `index.html` wird dynamisch gesetzt (`/rezepte/` auf Pages, `/` lokal). Deshalb gilt:
+
+- **`NavigateTo("/")` oder `href="/"` führt auf die Root `https://grafcode404.github.io/`** – dort liefert GitHub Pages KEINE App (der Redirect auf die Root funktioniert nicht). Das ist ein Fehler.
+- Für „zur Startseite": `NavigateTo("./")` bzw. `href="./"` verwenden (löst gegen den `<base href>` zur `/rezepte/`-Startseite auf).
+- Für Rezept-/Unterseiten absolute Pfade **mit** `/rezepte/`-Präfix verwenden, z. B. `href="/rezepte/{slug}"` oder `NavigateTo($"/rezepte/{slug}")` – diese funktionieren auf Pages (Basis-Pfad wird abgezogen) und lokal.
+- Bei neuen Links/`NavigateTo`-Aufrufen IMMER prüfen, wohin sie auf Pages (`base = /rezepte/`) auflösen.
