@@ -21,6 +21,8 @@
 | **Download** | Rezept als Markdown oder PDF |
 | **Kategorien & erweiterte Filter** | Brot + andere Kochrezepte, Suche/Filter ausbauen |
 | **Keine Bilder, nur Text** | Sehr geringe Datenmenge |
+| **Zutaten-Skalierung (Editor)** | Mehrere Mengen-Varianten (1x / 2x / 3x) direkt im Rezept hinterlegen, Beträge automatisch berechnen |
+| **Zutaten-Skalierung (Anzeige)** | Menge im Rezept live skalieren (z. B. auf 0,5x / 2x / 2,5x) |
 
 ---
 
@@ -142,6 +144,14 @@ Kein echtes Löschen der Datei (das würde Git-Historie nur über Commits behalt
 - [ ] UX-Polish, Fehlerbehandlung, Ladezustände
 - [ ] PWA-Cache-Bump (`cacheName` in `service-worker.js` erhöhen) bei größeren Releases
 - [ ] Tests/Doku aktualisieren
+
+### Phase 6 – Zutaten-Skalierung (automatisch)
+
+**Ziel:** Mengen automatisch skalieren – beim Erfassen und beim Anzeigen.
+
+- [ ] **Editor-seitig (Variante A):** Beim Anlegen/Bearbeiten aus einer Basis-Menge (1x) die weiteren Spalten (2x, 3x, …) automatisch berechnen, damit mehrere Varianten direkt im Rezept hinterlegt werden. Mengen (Zahl + Einheit) aus der Zutaten-Tabelle erkennen und umrechnen.
+- [ ] **Anzeige-seitig (Variante B):** Im Rezept (`RecipeDetail`) einen Skalierungs-Regler/Faktor (z. B. 0,5x / 1x / 2x / 2,5x), der die Zutatenmengen in der Tabelle live umrechnet – ohne das Rezept zu verändern.
+- [ ] Parser-Erweiterung: Zutaten-Mengen parsen und als skalierbare Einheit (Menge + Einheit) bereitstellen.
 
 ---
 
