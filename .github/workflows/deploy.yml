@@ -28,7 +28,7 @@ jobs:
 
       - name: Publish
         run: |
-          VERSION=$(git rev-parse --short HEAD)
+          VERSION=${{ github.run_number }}
           echo "Deploying version $VERSION"
           dotnet publish RezepteWeb.csproj -c Release -o publish -p:InformationalVersion=$VERSION
 
