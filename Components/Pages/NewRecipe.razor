@@ -14,38 +14,62 @@
 
 <h1>Neues Rezept</h1>
 
-<p class="text-muted">Zum Speichern ist ein Login über <a href="zugang">Zugang</a> nötig.</p>
-
-<div class="recipe-editor-actions mb-3">
-    <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
-        @(saving ? "Speichert …" : "Speichern")
-    </button>
-    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
-</div>
-
-@if (error is not null)
+@if (loggedIn is null)
 {
-    <div class="alert alert-danger">@error</div>
+    <p class="text-muted">Lade …</p>
 }
+else if (loggedIn == false)
+{
+    <p class="text-muted">Zum Speichern ist ein Login über <a href="zugang">Zugang</a> nötig.</p>
+}
+else
+{
+    <p class="text-muted">Dein Entwurf wird automatisch lokal gespeichert.</p>
 
-<div class="recipe-editor">
-    <div class="recipe-editor-pane">
-        <label class="form-label" for="editor-markdown">Markdown</label>
-        <textarea id="editor-markdown" class="form-control recipe-editor-textarea"
-                  @bind="markdown" @bind:event="oninput"></textarea>
+    <div class="recipe-editor-actions mb-3">
+        <button type="button" class="btn btn-primary" @onclick="Save" disabled="@saving">
+            @(saving ? "Speichert …" : "Speichern")
+        </button>
+
+        @if (confirmReset)
+        {
+            <span class="ms-2 me-1 text-muted">Entwurf wirklich zurücksetzen?</span>
+            <button type="button" class="btn btn-danger" @onclick="DoReset">Ja</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="AbortReset">Nein</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-outline-secondary" @onclick="AskReset">Zurücksetzen</button>
+        }
     </div>
-    <div class="recipe-editor-pane">
-        <label class="form-label">Vorschau</label>
-        <div class="recipe-content recipe-editor-preview">
-            @((MarkupString)Preview)
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    <div class="recipe-editor">
+        <div class="recipe-editor-pane">
+            <label class="form-label" for="editor-markdown">Markdown</label>
+            <textarea id="editor-markdown" class="form-control recipe-editor-textarea"
+                      @bind="markdown" @bind:event="oninput" @bind:after="OnMarkdownChanged"></textarea>
+        </div>
+        <div class="recipe-editor-pane">
+            <label class="form-label">Vorschau</label>
+            <div class="recipe-content recipe-editor-preview">
+                @((MarkupString)Preview)
+            </div>
         </div>
     </div>
-</div>
+}
 
 @code {
     private string markdown = Template;
     private string? error;
     private bool saving;
+    private bool? loggedIn;
+    private bool confirmReset;
+    private CancellationTokenSource? _draftCts;
 
     private static readonly string Template = string.Join('\n', new[]
     {
@@ -83,6 +107,49 @@
         return line is null ? "Rezept" : line.TrimStart()[2..].Trim();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            loggedIn = await JS.InvokeAsync<bool>("RecipeEdit.isLoggedIn");
+            if (loggedIn == true)
+            {
+                var draft = await JS.InvokeAsync<string>("RecipeEditLib.getDraft");
+                if (!string.IsNullOrWhiteSpace(draft))
+                {
+                    markdown = draft;
+                }
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnMarkdownChanged()
+    {
+        _draftCts?.Cancel();
+        _draftCts = new CancellationTokenSource();
+        var token = _draftCts.Token;
+        try
+        {
+            await Task.Delay(500, token);
+            await JS.InvokeVoidAsync("RecipeEditLib.setDraft", markdown);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private void AskReset() => confirmReset = true;
+
+    private void AbortReset() => confirmReset = false;
+
+    private async Task DoReset()
+    {
+        confirmReset = false;
+        markdown = Template;
+        await JS.InvokeVoidAsync("RecipeEditLib.clearDraft");
+    }
+
     private async Task Save()
     {
         if (saving)
@@ -110,6 +177,7 @@
 
         if (result.Ok)
         {
+            await JS.InvokeVoidAsync("RecipeEditLib.clearDraft");
             RecipeService.Reset();
             NavigationManager.NavigateTo($"/rezepte/{RecipeParser.Slugify(title)}");
         }
@@ -118,10 +186,5 @@
             error = result.Error ?? "Speichern fehlgeschlagen.";
             saving = false;
         }
-    }
-
-    private void Cancel()
-    {
-        NavigationManager.NavigateTo("./");
     }
 }

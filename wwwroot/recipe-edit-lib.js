@@ -49,11 +49,28 @@
         return next;
     }
 
+    var DRAFT_KEY = "rezepte.newrecipe.draft";
+
+    function getDraft() {
+        try { return localStorage.getItem(DRAFT_KEY) || ""; } catch (e) { return ""; }
+    }
+
+    function setDraft(text) {
+        try { localStorage.setItem(DRAFT_KEY, text); } catch (e) { }
+    }
+
+    function clearDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+    }
+
     var api = {
         toBase64: toBase64,
         fromBase64: fromBase64,
         slugify: slugify,
-        buildIndex: buildIndex
+        buildIndex: buildIndex,
+        getDraft: getDraft,
+        setDraft: setDraft,
+        clearDraft: clearDraft
     };
 
     if (typeof module !== "undefined" && module.exports) {
