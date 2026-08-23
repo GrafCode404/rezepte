@@ -32,6 +32,21 @@ jobs:
           echo "Deploying version $VERSION"
           dotnet publish RezepteWeb.csproj -c Release -o publish -p:InformationalVersion=$VERSION
 
+      - name: Strip SRI integrity hashes
+        run: |
+          # GitHub Pages CDN kann nach Deploys veraltete Dateien unter stabilen
+          # Namen ausliefern -> SRI-Hashes wuerden dann den App-Start blockieren.
+          DOTNET_JS=$(find publish/wwwroot/_framework -maxdepth 1 -name 'dotnet.*.js' ! -name 'dotnet.native.*' ! -name 'dotnet.runtime.*' | head -n 1)
+          echo "Patching $DOTNET_JS"
+          sed -i -E 's/"hash": "sha256-[A-Za-z0-9+\/=]+"/"hash": ""/g' "$DOTNET_JS"
+          sed -i -E 's/ integrity="sha256-[A-Za-z0-9+\/=]+"//g' publish/wwwroot/index.html
+          sed -i -E 's/"sha256-[A-Za-z0-9+\/=]+"/""/g' publish/wwwroot/index.html
+          if grep -R "sha256-" publish/wwwroot/index.html "$DOTNET_JS"; then
+            echo "FEHLER: Es sind noch sha256-Hashes vorhanden - Format hat sich geaendert."
+            exit 1
+          fi
+          echo "SRI-Hashes entfernt"
+
       - name: Upload Pages-Artefakt
         uses: actions/upload-pages-artifact@v3
         with:

@@ -126,3 +126,10 @@ Die App läuft unter `https://grafcode404.github.io/rezepte/` (Sub-Pfad, NICHT a
 - Für „zur Startseite": `NavigateTo("./")` bzw. `href="./"` verwenden (löst gegen den `<base href>` zur `/rezepte/`-Startseite auf).
 - Für Rezept-/Unterseiten absolute Pfade **mit** `/rezepte/`-Präfix verwenden, z. B. `href="/rezepte/{slug}"` oder `NavigateTo($"/rezepte/{slug}")` – diese funktionieren auf Pages (Basis-Pfad wird abgezogen) und lokal.
 - Bei neuen Links/`NavigateTo`-Aufrufen IMMER prüfen, wohin sie auf Pages (`base = /rezepte/`) auflösen.
+
+## WICHTIG: SRI-Hashes beim Deploy entfernen (GitHub Pages)
+
+GitHub Pages liefert Assets on-the-fly gzip-komprimiert aus, und der CDN kann nach Deploys **veraltete Datei-Versionen unter stabilen Namen** (Blazor-Fingerprints) ausliefern. Die SRI-Integrity-Hashes (im eingebetteten Boot-Manifest `dotnet.*.js` + Importmap in `index.html`) stammen dann aus einem anderen Build → der Browser **blockiert** die Assets („Failed to find a valid digest in the 'integrity' attribute") und die App lädt nicht.
+
+- **Deshalb entfernt der Deploy-Workflow (`.github/workflows/deploy.yml`, Schritt „Strip SRI integrity hashes") nach `dotnet publish` alle `sha256-`-Hashes** aus `dotnet.*.js` und `index.html` – mit Verifikation (Deploy schlägt fehl, falls noch Hashes übrig sind).
+- Diesen Schritt NICHT entfernen. Falls ein .NET-Update das Format ändert und die Verifikation fehlschlägt: Regexes im Workflow anpassen.

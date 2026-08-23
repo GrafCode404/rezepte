@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rezepte</title>
+    <meta name="theme-color" content="#1b6ec2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link href="_framework/dotnet.qge6g9o3vf.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-Rl0CjVNXidaQMzyJXCoRSeOIAfZqcTZyXeOx0T6YoEE=" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="RezepteWeb.styles.css" rel="stylesheet" />
+    <script type="importmap">{
+  "imports": {
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.zxhwjtv6sc.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.vzj2a6aakt.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.qge6g9o3vf.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.zbexyp8zrs.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_framework/blazor.webassembly.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
+    "./_framework/blazor.webassembly.zxhwjtv6sc.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
+    "./_framework/dotnet.js": "sha256-Rl0CjVNXidaQMzyJXCoRSeOIAfZqcTZyXeOx0T6YoEE=",
+    "./_framework/dotnet.native.js": "sha256-RezASHv+dbqV50cFnld76YiLhk4B+BjMAKs/euUdNyE=",
+    "./_framework/dotnet.native.vzj2a6aakt.js": "sha256-RezASHv+dbqV50cFnld76YiLhk4B+BjMAKs/euUdNyE=",
+    "./_framework/dotnet.qge6g9o3vf.js": "sha256-Rl0CjVNXidaQMzyJXCoRSeOIAfZqcTZyXeOx0T6YoEE=",
+    "./_framework/dotnet.runtime.js": "sha256-MZMguyke9CroSQl+L/SHIGFkPTD+LtYGXkXjAvwWx40=",
+    "./_framework/dotnet.runtime.zbexyp8zrs.js": "sha256-MZMguyke9CroSQl+L/SHIGFkPTD+LtYGXkXjAvwWx40="
+  }
+}</script>
+    <script>
+        (function () {
+            // Basis-Pfad passend zur Umgebung: GitHub Pages ("/rezepte/") oder lokal ("/").
+            var base = location.pathname.indexOf('/rezepte') === 0 ? '/rezepte/' : '/';
+            var baseTag = document.createElement('base');
+            baseTag.href = base;
+            document.head.appendChild(baseTag);
+
+            // Zielpfad wiederherstellen, der von 404.html (Suchergebnis-Fallback) gemerkt wurde.
+            // pushState statt replaceState, damit der Zurück-Button zur Übersicht führt.
+            var ret = sessionStorage.getItem('rezept-return');
+            if (ret) {
+                sessionStorage.removeItem('rezept-return');
+                history.pushState(null, '', base + ret);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="app-splash">
+            <div class="app-splash-steam" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="app-splash-bread" aria-hidden="true">🍞</div>
+            <div class="app-splash-name">Rezepte</div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Es ist ein Fehler aufgetreten.
+        <a href="." class="reload">Neu laden</a>
+        <span class="dismiss">x</span>
+    </div>
+    <script src="_framework/blazor.webassembly.zxhwjtv6sc.js"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("service-worker.js").catch(function () { });
+        }
+    </script>
+    <script src="recipe-notes.js" defer></script>
+    <script src="recipe-edit-lib.js" defer></script>
+    <script src="recipe-edit.js" defer></script>
+    <script src="share.js" defer></script>
+    <script src="pwa-update.js" defer></script>
+</body>
+
+</html>
