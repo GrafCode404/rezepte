@@ -4,6 +4,75 @@ namespace RezepteWeb.Services;
 
 public static class RecipeParser
 {
+    public static string Normalize(string markdown) => markdown.Replace("\r\n", "\n");
+
+    public static Dictionary<string, string> ParseFrontmatter(string markdown)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var normalized = Normalize(markdown);
+        if (!normalized.StartsWith("---\n", StringComparison.Ordinal))
+        {
+            return result;
+        }
+
+        var lines = normalized.Split('\n');
+        for (var i = 1; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (line == "---")
+            {
+                break;
+            }
+            var colon = line.IndexOf(':');
+            if (colon <= 0)
+            {
+                continue;
+            }
+            result[line[..colon].Trim()] = line[(colon + 1)..].Trim();
+        }
+
+        return result;
+    }
+
+    public static bool IsDeleted(string markdown)
+    {
+        return ParseFrontmatter(markdown).TryGetValue("deleted", out var value) &&
+               (value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                value.Equals("1", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static string StripFrontmatter(string markdown)
+    {
+        var normalized = Normalize(markdown);
+        if (!normalized.StartsWith("---\n", StringComparison.Ordinal))
+        {
+            return markdown;
+        }
+
+        var lines = normalized.Split('\n');
+        for (var i = 1; i < lines.Length; i++)
+        {
+            if (lines[i].Trim() == "---")
+            {
+                return string.Join('\n', lines[(i + 1)..]);
+            }
+        }
+
+        return markdown;
+    }
+
+    public static string MarkDeleted(string markdown)
+    {
+        var normalized = Normalize(markdown);
+        if (IsDeleted(normalized))
+        {
+            return normalized;
+        }
+        return "---\ndeleted: true\n---\n" + normalized;
+    }
+
+    public static string MarkRestored(string markdown) => StripFrontmatter(markdown);
+
     public static string Slugify(string title)
     {
         var normalized = title

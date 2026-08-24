@@ -1,0 +1,98 @@
+@page "/papierkorb"
+@using RezepteWeb.Models
+@using RezepteWeb.Services
+@inject RecipeService RecipeService
+@inject IJSRuntime JS
+
+<PageTitle>Papierkorb – Rezepte</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <a href="./" class="breadcrumb-link text-muted">&larr; Zur Übersicht</a>
+</nav>
+
+<h1>Papierkorb</h1>
+
+<p class="text-muted">Gelöschte Rezepte – hier kannst du sie wiederherstellen.</p>
+
+@if (loggedIn is null)
+{
+    <p class="text-muted">Lade …</p>
+}
+else if (loggedIn == false)
+{
+    <p class="text-muted">Der Papierkorb ist nur nach Login über <a href="zugang">Zugang</a> sichtbar.</p>
+}
+else if (deleted.Count == 0)
+{
+    <p class="text-muted">Keine gelöschten Rezepte.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var item in deleted)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@item.Title</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => Restore(item)" disabled="@saving">
+                    Wiederherstellen
+                </button>
+            </li>
+        }
+    </ul>
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger mt-3">@error</div>
+    }
+}
+
+@code {
+    private List<Recipe> deleted = [];
+    private bool? loggedIn;
+    private bool saving;
+    private string? error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            loggedIn = await JS.InvokeAsync<bool>("RecipeEdit.isLoggedIn");
+            if (loggedIn == true)
+            {
+                deleted = await RecipeService.GetDeletedRecipesAsync();
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task Restore(Recipe item)
+    {
+        if (saving)
+        {
+            return;
+        }
+
+        saving = true;
+        error = null;
+
+        var markdown = RecipeParser.MarkRestored(item.Markdown);
+        var result = await JS.InvokeAsync<EditResult>("RecipeEdit.save", new
+        {
+            fileName = item.FileName,
+            markdown = markdown,
+            title = item.Title
+        });
+
+        if (result.Ok)
+        {
+            RecipeService.Reset();
+            deleted = await RecipeService.GetDeletedRecipesAsync();
+        }
+        else
+        {
+            error = result.Error ?? "Wiederherstellen fehlgeschlagen.";
+        }
+
+        saving = false;
+    }
+}

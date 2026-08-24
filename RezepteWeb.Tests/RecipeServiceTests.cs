@@ -228,4 +228,53 @@ public class RecipeServiceTests
         Assert.NotNull(await service.GetBySlugAsync("grillbroetchen"));
         Assert.Null(await service.GetBySlugAsync("grillbrötchen"));
     }
+
+    [Fact]
+    public async Task GetRecipesAsync_filtert_geloeschte_aus()
+    {
+        var deletedMd = "---\ndeleted: true\n---\n# Geloescht\n\n| Zutaten | 1x |\n| :--- | :--- |\n| X | 1 |";
+        var activeMd = "# Aktiv\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Y | 1 |";
+        var service = CreateService(("Aktiv.md", activeMd), ("Geloescht.md", deletedMd));
+
+        var recipes = await service.GetRecipesAsync();
+
+        Assert.Single(recipes);
+        Assert.Equal("Aktiv", recipes[0].Title);
+    }
+
+    [Fact]
+    public async Task GetDeletedRecipesAsync_liefert_geloeschte()
+    {
+        var deletedMd = "---\ndeleted: true\n---\n# Geloescht";
+        var activeMd = "# Aktiv";
+        var service = CreateService(("Aktiv.md", activeMd), ("Geloescht.md", deletedMd));
+
+        var deleted = await service.GetDeletedRecipesAsync();
+
+        Assert.Single(deleted);
+        Assert.Equal("Geloescht", deleted[0].Title);
+        Assert.StartsWith("---\ndeleted: true", deleted[0].Markdown);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_findet_geloeschte_nicht()
+    {
+        var deletedMd = "---\ndeleted: true\n---\n# Geloescht";
+        var service = CreateService(("Geloescht.md", deletedMd));
+
+        Assert.Null(await service.GetBySlugAsync("geloescht"));
+    }
+
+    [Fact]
+    public async Task SearchAsync_ignoriert_geloeschte()
+    {
+        var deletedMd = "---\ndeleted: true\n---\n# Sauerteig Spezial\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Mehl | 1 |";
+        var activeMd = "# Sauerteig\n\n| Zutaten | 1x |\n| :--- | :--- |\n| Mehl | 1 |";
+        var service = CreateService(("Aktiv.md", activeMd), ("Geloescht.md", deletedMd));
+
+        var hits = await service.SearchAsync("sauerteig");
+
+        Assert.Single(hits);
+        Assert.Equal("Sauerteig", hits[0].Title);
+    }
 }

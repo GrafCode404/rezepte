@@ -12,6 +12,7 @@ public class RecipeService
 
     private readonly HttpClient _http;
     private readonly List<Recipe> _recipes = [];
+    private readonly List<Recipe> _deleted = [];
     private Task? _loadTask;
 
     public RecipeService(HttpClient http)
@@ -27,6 +28,7 @@ public class RecipeService
     public void Reset()
     {
         _recipes.Clear();
+        _deleted.Clear();
         _loadTask = null;
     }
 
@@ -34,6 +36,12 @@ public class RecipeService
     {
         await EnsureLoadedAsync();
         return _recipes;
+    }
+
+    public async Task<List<Recipe>> GetDeletedRecipesAsync()
+    {
+        await EnsureLoadedAsync();
+        return _deleted;
     }
 
     public async Task<Recipe?> GetBySlugAsync(string slug)
@@ -86,11 +94,12 @@ public class RecipeService
 
         foreach (var entry in entries.OrderBy(e => e.Name))
         {
-            var title = RecipeParser.ParseTitle(entry.Content, Path.GetFileNameWithoutExtension(entry.Name));
-            var facts = RecipeParser.ParseFacts(entry.Content);
-            var cleaned = entry.Content.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase);
+            var content = RecipeParser.StripFrontmatter(entry.Content);
+            var title = RecipeParser.ParseTitle(content, Path.GetFileNameWithoutExtension(entry.Name));
+            var facts = RecipeParser.ParseFacts(content);
+            var cleaned = content.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase);
 
-            _recipes.Add(new Recipe
+            var recipe = new Recipe
             {
                 Title = title,
                 Slug = RecipeParser.Slugify(title),
@@ -99,7 +108,16 @@ public class RecipeService
                 Html = Markdown.ToHtml(RecipeParser.RemoveHeaderBlock(cleaned, title), pipeline),
                 Ingredients = RecipeParser.ExtractIngredients(cleaned),
                 Facts = facts,
-            });
+            };
+
+            if (RecipeParser.IsDeleted(entry.Content))
+            {
+                _deleted.Add(recipe);
+            }
+            else
+            {
+                _recipes.Add(recipe);
+            }
         }
     }
 

@@ -27,6 +27,24 @@ else
     @if (canEdit)
     {
         <a class="btn btn-sm btn-outline-secondary no-print" href="/rezepte/@recipe.Slug/edit">Bearbeiten</a>
+        <button type="button" class="btn btn-sm btn-outline-danger no-print ms-1" @onclick="AskDelete">Löschen</button>
+    }
+
+    <a class="btn btn-sm btn-link text-muted no-print" href="@historyUrl" target="_blank" rel="noopener">Verlauf (GitHub)</a>
+
+    @if (confirmDelete)
+    {
+        <div class="alert alert-warning no-print mt-3">
+            <p class="mb-2">Rezept wirklich löschen? Es landet im Papierkorb und kann dort wiederhergestellt werden.</p>
+            <button type="button" class="btn btn-danger btn-sm" @onclick="Delete" disabled="@deleting">
+                @(deleting ? "Lösche …" : "Ja, löschen")
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="AbortDelete" disabled="@deleting">Abbrechen</button>
+            @if (deleteError is not null)
+            {
+                <div class="text-danger mt-2">@deleteError</div>
+            }
+        </div>
     }
 
     @if (recipe.Facts.Count > 0)
@@ -86,11 +104,52 @@ else
     private string? qrSvg;
     private string waLink = "";
     private string mailLink = "";
+    private string historyUrl = "";
     private bool showQr;
     private bool canEdit;
     private bool loginChecked;
+    private bool confirmDelete;
+    private bool deleting;
+    private string? deleteError;
 
     private void ToggleQr() => showQr = !showQr;
+
+    private void AskDelete()
+    {
+        confirmDelete = true;
+        deleteError = null;
+    }
+
+    private void AbortDelete() => confirmDelete = false;
+
+    private async Task Delete()
+    {
+        if (recipe is null || deleting)
+        {
+            return;
+        }
+
+        deleting = true;
+        deleteError = null;
+
+        var result = await JS.InvokeAsync<EditResult>("RecipeEdit.save", new
+        {
+            fileName = recipe.FileName,
+            markdown = RecipeParser.MarkDeleted(recipe.Markdown),
+            title = recipe.Title
+        });
+
+        if (result.Ok)
+        {
+            RecipeService.Reset();
+            NavigationManager.NavigateTo("./");
+        }
+        else
+        {
+            deleteError = result.Error ?? "Löschen fehlgeschlagen.";
+            deleting = false;
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -103,6 +162,8 @@ else
             waLink = "https://wa.me/?text=" + Uri.EscapeDataString(recipe.Title + " – " + url);
             mailLink = "mailto:?subject=" + Uri.EscapeDataString(recipe.Title) +
                 "&body=" + Uri.EscapeDataString(url);
+            historyUrl = "https://github.com/GrafCode404/rezepte-content/commits/main/recipes/" +
+                Uri.EscapeUriString(recipe.FileName);
         }
     }
 

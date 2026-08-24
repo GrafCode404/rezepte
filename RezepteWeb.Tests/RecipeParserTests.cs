@@ -135,4 +135,64 @@ public class RecipeParserTests
         Assert.DoesNotContain("Menge", result);
         Assert.Contains("Anleitungen", result);
     }
+
+    [Fact]
+    public void ParseFrontmatter_liest_deleted_Flag()
+    {
+        Assert.True(RecipeParser.IsDeleted("---\ndeleted: true\n---\n# Titel"));
+        Assert.True(RecipeParser.IsDeleted("---\ndeleted: 1\n---\n# Titel"));
+        Assert.False(RecipeParser.IsDeleted("---\ndeleted: false\n---\n# Titel"));
+    }
+
+    [Fact]
+    public void IsDeleted_false_ohne_Frontmatter()
+    {
+        Assert.False(RecipeParser.IsDeleted("# Titel\nText"));
+    }
+
+    [Fact]
+    public void MarkDeleted_stellt_Frontmatter_voran()
+    {
+        var marked = RecipeParser.MarkDeleted("# Titel\nText");
+
+        Assert.StartsWith("---\ndeleted: true\n---\n", marked);
+        Assert.True(RecipeParser.IsDeleted(marked));
+    }
+
+    [Fact]
+    public void MarkDeleted_ist_idempotent()
+    {
+        var marked = RecipeParser.MarkDeleted("# Titel");
+        Assert.Equal(marked, RecipeParser.MarkDeleted(marked));
+    }
+
+    [Fact]
+    public void MarkRestored_entfernt_Frontmatter()
+    {
+        var restored = RecipeParser.MarkRestored("---\ndeleted: true\n---\n# Titel");
+
+        Assert.Equal("# Titel", restored);
+        Assert.False(RecipeParser.IsDeleted(restored));
+    }
+
+    [Fact]
+    public void StripFrontmatter_laesst_Rezepte_ohne_Frontmatter_unveraendert()
+    {
+        var md = "# Titel\nText";
+        Assert.Equal(md, RecipeParser.StripFrontmatter(md));
+    }
+
+    [Fact]
+    public void MarkRestored_ohne_Frontmatter_bleibt_unveraendert()
+    {
+        Assert.Equal("# Titel", RecipeParser.MarkRestored("# Titel"));
+    }
+
+    [Fact]
+    public void StripFrontmatter_unterstuetzt_CRLF()
+    {
+        var md = "---\r\ndeleted: true\r\n---\r\n# Titel";
+        Assert.Equal("# Titel", RecipeParser.StripFrontmatter(md));
+        Assert.True(RecipeParser.IsDeleted(md));
+    }
 }
