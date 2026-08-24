@@ -127,6 +127,7 @@ h1:focus {
 .recipe-content table {
     border-collapse: collapse;
     margin: 1rem 0;
+    width: 100%;
 }
 
 .recipe-content th, .recipe-content td {
@@ -479,6 +480,12 @@ h1:focus {
 
     .recipe-content {
         max-width: 100% !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .recipe-content tbody tr:nth-child(even) td {
+        background-color: #f2f2f2;
     }
 
     .recipe-content table {
