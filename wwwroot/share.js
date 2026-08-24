@@ -34,6 +34,20 @@
             } else {
                 fallback();
             }
+        },
+        download: function (text, fileName) {
+            var blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        },
+        print: function () {
+            window.print();
         }
     };
 })();

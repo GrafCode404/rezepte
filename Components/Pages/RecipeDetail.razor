@@ -68,6 +68,12 @@ else
                     <figcaption>Link als QR-Code</figcaption>
                 </figure>
             }
+
+            <h3>Herunterladen</h3>
+            <div class="share-buttons">
+                <button type="button" class="btn btn-share" @onclick="DownloadMarkdown">Markdown (.md)</button>
+                <button type="button" class="btn btn-share" @onclick="PrintRecipe">PDF (Drucken)</button>
+            </div>
         </section>
     }
 }
@@ -106,6 +112,19 @@ else
         {
             await JS.InvokeVoidAsync("RecipeShare.copy", NavigationManager.Uri);
         }
+    }
+
+    private async Task DownloadMarkdown()
+    {
+        if (recipe is not null)
+        {
+            await JS.InvokeVoidAsync("RecipeShare.download", recipe.Markdown, recipe.FileName);
+        }
+    }
+
+    private async Task PrintRecipe()
+    {
+        await JS.InvokeVoidAsync("RecipeShare.print");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
