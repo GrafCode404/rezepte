@@ -107,21 +107,21 @@ Kein echtes Löschen der Datei (das würde Git-Historie nur über Commits behalt
 - [x] Unit-Tests (xUnit, C#) + JS-Tests (Node) + CI-Workflow
 - [x] Softdelete-Vorarbeit: Anmerkungen (Issues) ebenfalls nach `rezepte-content` umgezogen
 
-### Phase 2 – Softdelete, Restore & Revisionen
+### Phase 2 – Softdelete, Restore & Revisionen – ✅ UMGESETZT
 
 **Ziel:** Löschen ohne Datenverlust, Wiederherstellung.
 
-- [ ] Löschen = Frontmatter `deleted: true` setzen (Commit über Content API)
-- [ ] Ausblenden in `RecipeService.LoadAsync` (filtert gelöschte)
-- [ ] Verwaltungskonzept für gelöschte Rezepte (Liste auf "Zugang"/Admin-Seite, Restore-Button)
-- [ ] Rev.-Anzeige optional: Liste der letzten Commits einer Datei (über GitHub API) zur Info
+- [x] Löschen = Frontmatter `deleted: true` setzen (`RecipeParser.MarkDeleted`, Commit über Content API via `RecipeEdit.save`)
+- [x] Ausblenden in `RecipeService` (aktive vs. gelöschte Listen, `GetDeletedRecipesAsync`)
+- [x] Papierkorb-Seite (`/papierkorb`, nur eingeloggt) mit „Wiederherstellen" (`RecipeParser.MarkRestored`)
+- [x] Revisions-Zugang: „Verlauf (GitHub)"-Link auf die Commit-Historie der Datei im Content-Repo
 
-### Phase 3 – Download (Markdown & PDF)
+### Phase 3 – Download (Markdown & PDF) – ✅ UMGESETZT
 
 **Ziel:** Rezepte exportierbar.
 
-- [ ] Markdown-Download: einfach (Dateiinhalt als Blob aus `index.json`/Content-API)
-- [ ] PDF-Download: Client-seitige Generierung, z. B. `jsPDF` oder Druck-Ansicht (Browser-Print → "Als PDF speichern") – **kostenlos, keine Server nötig**. Empfehlung: dedizierte Druck-Ansicht + Print-CSS, damit nicht extra eine PDF-Bibliothek eingebunden werden muss.
+- [x] Markdown-Download: Blob im Browser (`RecipeShare.download`), Dateiname = Rezept-Datei
+- [x] PDF-Download über Druck-Ansicht („PDF (Drucken)" → Browser-Druckdialog → „Als PDF speichern") mit Print-CSS: nur Rezept-Inhalt, Zebrastreifen-Tabellen, Seitenumbruch an `<div class="page"/>`-Markern
 
 ### Phase 4 – Kategorien & Filter
 
