@@ -62,7 +62,7 @@ else if (recipe is not null)
     private bool notFound;
 
     private string Preview =>
-        Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase),
+        Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase),
             RecipeService.CreatePipeline());
 
     protected override async Task OnParametersSetAsync()

@@ -98,7 +98,7 @@ else
     });
 
     private string Preview =>
-        Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase),
+        Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase),
             RecipeService.CreatePipeline());
 
     private static string ExtractTitle(string md)

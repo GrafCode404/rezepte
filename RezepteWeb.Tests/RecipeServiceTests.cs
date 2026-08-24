@@ -138,7 +138,8 @@ public class RecipeServiceTests
         var recipes = await service.GetRecipesAsync();
 
         var recipe = Assert.Single(recipes);
-        Assert.DoesNotContain("page", recipe.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<div class=\"page\"/>", recipe.Html);
+        Assert.Contains("page-break", recipe.Html);
         Assert.DoesNotContain("Hefezopf (Osterzopf)", recipe.Html);
         Assert.Contains("Anleitungen", recipe.Html);
     }

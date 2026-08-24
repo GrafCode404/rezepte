@@ -446,6 +446,10 @@ h1:focus {
 }
 
 /* Druck-Ansicht: nur den Rezept-Inhalt ausgeben („PDF (Drucken)"). */
+.page-break {
+    display: none;
+}
+
 @media print {
     .sidebar,
     .top-row,
@@ -453,8 +457,15 @@ h1:focus {
     .recipe-share,
     .recipe-comments,
     #recipe-notes,
-    #blazor-error-ui {
+    #blazor-error-ui,
+    .no-print {
         display: none !important;
+    }
+
+    .page-break {
+        display: block;
+        break-before: page;
+        page-break-before: always;
     }
 
     .page {

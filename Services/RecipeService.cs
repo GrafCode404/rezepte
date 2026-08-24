@@ -88,7 +88,7 @@ public class RecipeService
         {
             var title = RecipeParser.ParseTitle(entry.Content, Path.GetFileNameWithoutExtension(entry.Name));
             var facts = RecipeParser.ParseFacts(entry.Content);
-            var cleaned = entry.Content.Replace("<div class=\"page\"/>", string.Empty, StringComparison.OrdinalIgnoreCase);
+            var cleaned = entry.Content.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase);
 
             _recipes.Add(new Recipe
             {
