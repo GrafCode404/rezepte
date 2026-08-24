@@ -95,20 +95,17 @@ Kein echtes Löschen der Datei (das würde Git-Historie nur über Commits behalt
 
 ## 5. Phasenplan
 
-### Phase 1 – Grundlagen: Schreibzugriff über GitHub Content API
+### Phase 1 – Grundlagen: Schreibzugriff über GitHub Content API – ✅ UMGESETZT
 
 **Ziel:** Rezepte direkt aus der App anlegen und bearbeiten können.
 
-- [ ] GitHub-Token-Berechtigung erweitern (Contents Read+Write) + Zugang-Seite (`Login.razor`) anpassen
-- [ ] Neues JS-Modul `recipe-edit.js` analog zu `recipe-notes.js`:
-  - `GET /repos/{repo}/contents/wwwroot/recipes/{file}.md`
-  - `PUT ...` (Commit-Nachricht, `sha` des aktuellen Stands für Konfliktprüfung)
-  - `POST ...` für neue Dateien
-- [ ] Blazor-Komponenten:
-  - Bearbeiten-Button auf `RecipeDetail.razor`
-  - Editor-Seite (Textarea + Markdown-Vorschau via Markdig – Client-seitig bereits vorhanden)
-  - "Neues Rezept"-Seite
-- [ ] `RecipeService` nach Bearbeitung neu laden / Cache invalidieren
+- [x] GitHub-Token-Berechtigung erweitert (Contents Read+Write) + Zugang-Seite (`Login.razor`) angepasst
+- [x] JS-Module `recipe-edit.js` + `recipe-edit-lib.js` (Contents API gegen `GrafCode404/rezepte-content`, sha-Konfliktprüfung, index.json-Regeneration)
+- [x] Blazor-Komponenten: Bearbeiten-Button auf `RecipeDetail.razor`, Editor-Seite (`EditRecipe.razor`, mit Live-Vorschau), „Neues Rezept"-Seite (`NewRecipe.razor`, mit lokalem Entwurf + Login-Gate)
+- [x] `RecipeService.Reset()` nach Bearbeitung
+- [x] Rezepte in eigenes Repo `GrafCode404/rezepte-content` ausgelagert – die App lädt `index.json` zur Laufzeit (CDN mit jsDelivr-Fallback), Rezept-Änderungen erfordern keinen Rebuild
+- [x] Unit-Tests (xUnit, C#) + JS-Tests (Node) + CI-Workflow
+- [x] Softdelete-Vorarbeit: Anmerkungen (Issues) ebenfalls nach `rezepte-content` umgezogen
 
 ### Phase 2 – Softdelete, Restore & Revisionen
 
