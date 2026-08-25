@@ -97,6 +97,7 @@ h1:focus {
     margin-top: 1.5rem;
     max-width: 60rem;
     line-height: 1.6;
+    overflow-wrap: break-word;
 }
 
 .recipe-qr {
@@ -424,6 +425,7 @@ h1:focus {
 .recipe-editor-pane {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .recipe-editor-textarea {
@@ -443,6 +445,8 @@ h1:focus {
     min-height: 65vh;
     background: #fff;
     overflow: auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
     flex: 1;
 }
 
