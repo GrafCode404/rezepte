@@ -109,7 +109,9 @@ Das Anmerkungs-Widget nutzt die **GitHub REST API** direkt aus dem Browser (kein
 ## Arbeitsablauf für Änderungen (wichtig)
 
 1. **Immer zuerst `git pull --rebase`** vor `git push` – der Remote kann durch direkte Edits über die GitHub-Weboberfläche oder eigene Pushes neue Commits haben. Bei Divergenz rebasen statt mergen, um die Historie linear zu halten.
-2. Nach dem Push kurz den GitHub-Actions-Workflow im Auge behalten (`gh run watch`/`gh run list`), der Deploy läuft nicht sofort.
+2. **Nach jedem Push und Deploy prüfen, ob die neue Version wirklich live ist**, und den Nutzer über die neue Versionsnummer informieren:
+   - Deploy-Status prüfen (z. B. `gh run watch` bzw. `gh run list` oder per API: `GET https://api.github.com/repos/GrafCode404/rezepte/actions/runs?per_page=1`) – er muss `conclusion: success` sein.
+   - Die **Versionsnummer** ist die `run_number` des Deploy-Runs (z. B. `v49`). Sie steht auch oben in der Leiste der Webseite – nach dem Deploy kurz verifizieren (z. B. `curl -s -o /dev/null -w "%{http_code}"` auf eine frisch geänderte Datei) und dem Nutzer die Nummer mitteilen.
 3. **Neue Rezepte anlegen**: entweder über die Webseite (`/neu`) oder direkt als `recipes/*.md` im **Content-Repo** (`rezepte-content`). `recipes/index.json` NICHT manuell im Content-Repo editieren – wird automatisch erzeugt.
 
 ## Sonstige Hinweise aus der bisherigen Entwicklung
