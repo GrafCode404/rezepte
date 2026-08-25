@@ -127,6 +127,7 @@ public class RecipeService
         string[] urls =
         [
             RecipesIndexUrl + "?v=" + timestamp,
+            RecipesIndexUrl + "?v=" + timestamp + "&r=1",
             "https://cdn.jsdelivr.net/gh/GrafCode404/rezepte-content@main/recipes/index.json",
         ];
 
