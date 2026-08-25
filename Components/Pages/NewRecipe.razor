@@ -6,13 +6,13 @@
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
-<PageTitle>Neues Rezept – Rezepte</PageTitle>
+<PageTitle>@Heading – Rezepte</PageTitle>
 
 <nav aria-label="breadcrumb">
     <a href="./" class="breadcrumb-link text-muted">&larr; Zur Übersicht</a>
 </nav>
 
-<h1>Neues Rezept</h1>
+<h1>@Heading</h1>
 
 @if (loggedIn is null)
 {
@@ -100,6 +100,18 @@ else
     private string Preview =>
         Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase),
             RecipeService.CreatePipeline());
+
+    private string Heading
+    {
+        get
+        {
+            var line = markdown.Split('\n').FirstOrDefault(l => l.TrimStart().StartsWith("# "));
+            var title = line is null ? "" : line.TrimStart()[2..].Trim();
+            return string.IsNullOrWhiteSpace(title) || title == "[Rezeptname]"
+                ? "Neues Rezept"
+                : "[Neu] " + title;
+        }
+    }
 
     private static string ExtractTitle(string md)
     {
