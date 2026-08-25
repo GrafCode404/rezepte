@@ -163,7 +163,7 @@ else
             mailLink = "mailto:?subject=" + Uri.EscapeDataString(recipe.Title) +
                 "&body=" + Uri.EscapeDataString(url);
             historyUrl = "https://github.com/GrafCode404/rezepte-content/commits/main/recipes/" +
-                Uri.EscapeUriString(recipe.FileName);
+                Uri.EscapeDataString(recipe.FileName);
         }
     }
 
