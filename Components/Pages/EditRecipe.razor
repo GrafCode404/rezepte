@@ -29,6 +29,9 @@ else if (recipe is not null)
             @(saving ? "Speichert …" : "Speichern")
         </button>
         <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@saving">Abbrechen</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="TogglePreview">
+            @(showPreview ? "Vorschau ausblenden" : "Vorschau zeigen")
+        </button>
     </div>
 
     @if (error is not null)
@@ -36,18 +39,21 @@ else if (recipe is not null)
         <div class="alert alert-danger">@error</div>
     }
 
-    <div class="recipe-editor">
+    <div class="recipe-editor @(showPreview ? "" : "recipe-editor-no-preview")">
         <div class="recipe-editor-pane">
             <label class="form-label" for="editor-markdown">Markdown</label>
             <textarea id="editor-markdown" class="form-control recipe-editor-textarea"
                       @bind="markdown" @bind:event="oninput"></textarea>
         </div>
-        <div class="recipe-editor-pane">
-            <label class="form-label">Vorschau</label>
-            <div class="recipe-content recipe-editor-preview">
-                @((MarkupString)Preview)
+        @if (showPreview)
+        {
+            <div class="recipe-editor-pane">
+                <label class="form-label">Vorschau</label>
+                <div class="recipe-content recipe-editor-preview">
+                    @((MarkupString)Preview)
+                </div>
             </div>
-        </div>
+        }
     </div>
 }
 
@@ -60,6 +66,9 @@ else if (recipe is not null)
     private string? error;
     private bool saving;
     private bool notFound;
+    private bool showPreview = true;
+
+    private void TogglePreview() => showPreview = !showPreview;
 
     private string Preview =>
         Markdown.ToHtml(markdown.Replace("<div class=\"page\"/>", "<div class=\"page-break\"></div>", StringComparison.OrdinalIgnoreCase),

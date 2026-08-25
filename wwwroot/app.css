@@ -422,6 +422,10 @@ h1:focus {
     }
 }
 
+.recipe-editor.recipe-editor-no-preview {
+    grid-template-columns: 1fr;
+}
+
 .recipe-editor-pane {
     display: flex;
     flex-direction: column;
