@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Markdig;
 using RezepteWeb.Models;
@@ -9,6 +11,9 @@ public class RecipeService
 {
     public const string RecipesIndexUrl =
         "https://raw.githubusercontent.com/GrafCode404/rezepte-content/main/recipes/index.json";
+
+    public const string RecipesIndexApiUrl =
+        "https://api.github.com/repos/GrafCode404/rezepte-content/contents/recipes/index.json";
 
     private readonly HttpClient _http;
     private readonly List<Recipe> _recipes = [];
@@ -123,11 +128,33 @@ public class RecipeService
 
     private async Task<RecipeEntry[]?> FetchEntriesAsync()
     {
+        // 1. GitHub Contents API – sofort aktuell, kein CDN-Cache
+        //    (raw.githubusercontent cached index.json 5 Min. und ignoriert ?v=).
+        try
+        {
+            using var response = await _http.GetAsync(RecipesIndexApiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadFromJsonAsync<GitHubContentResponse>();
+                if (body is not null && body.Content.Length > 0)
+                {
+                    var clean = body.Content.Replace("\n", "").Replace("\r", "");
+                    var json = Encoding.UTF8.GetString(Convert.FromBase64String(clean));
+                    return JsonSerializer.Deserialize<RecipeEntry[]>(json);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // weiter mit Fallbacks
+        }
+
+        // 2. raw.githubusercontent (fallback, kann bis 5 Min. veraltet sein)
+        // 3. jsDelivr (fallback, kann bis 12 Std. veraltet sein)
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         string[] urls =
         [
             RecipesIndexUrl + "?v=" + timestamp,
-            RecipesIndexUrl + "?v=" + timestamp + "&r=1",
             "https://cdn.jsdelivr.net/gh/GrafCode404/rezepte-content@main/recipes/index.json",
         ];
 
@@ -144,6 +171,15 @@ public class RecipeService
         }
 
         return null;
+    }
+
+    private class GitHubContentResponse
+    {
+        [JsonPropertyName("content")]
+        public string Content { get; set; } = "";
+
+        [JsonPropertyName("encoding")]
+        public string Encoding { get; set; } = "";
     }
 
     private class RecipeEntry

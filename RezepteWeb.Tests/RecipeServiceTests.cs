@@ -103,6 +103,44 @@ public class RecipeServiceTests
         }
     }
 
+    private sealed class ApiHandler : HttpMessageHandler
+    {
+        private readonly string _json;
+
+        public ApiHandler(string json) => _json = json;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.RequestUri!.Host.Contains("api.github.com", StringComparison.OrdinalIgnoreCase))
+            {
+                var payload = JsonSerializer.Serialize(new
+                {
+                    name = "index.json",
+                    content = Convert.ToBase64String(Encoding.UTF8.GetBytes(_json)),
+                    encoding = "base64"
+                });
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(payload, Encoding.UTF8, "application/json")
+                });
+            }
+            throw new HttpRequestException("nur Contents API erlaubt");
+        }
+    }
+
+    [Fact]
+    public async Task GetRecipesAsync_nutzt_Contents_API_mit_base64()
+    {
+        var payload = JsonSerializer.Serialize(new[] { new { name = "Hefezopf.md", content = SampleMarkdown } });
+        var service = new RecipeService(new HttpClient(new ApiHandler(payload)));
+
+        var recipes = await service.GetRecipesAsync();
+
+        Assert.Single(recipes);
+        Assert.Equal("Hefezopf (Osterzopf)", recipes[0].Title);
+        Assert.Equal(SampleMarkdown, recipes[0].Markdown);
+    }
+
     private static RecipeService CreateService()
     {
         var payload = JsonSerializer.Serialize(new[] { new { name = "Hefezopf.md", content = SampleMarkdown } });
